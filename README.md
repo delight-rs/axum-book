@@ -1,11 +1,12 @@
 # Axum Book
 
-> 基于最新 **axum 0.8+** 的工业级 Web 后端实战教程：从零到生产。
+> 基于最新 **axum 0.8+** 的 Web 后端实战教程：从零到生产。
 
 [![mdBook](https://img.shields.io/badge/built%20with-mdBook-blue)](https://rust-lang.github.io/mdBook/)
 
 **当前状态**：完成简介， 详见 [Roadmap.md](./Roadmap.md)。
-**在线阅读**: 在线阅读
+
+**在线阅读**: https://delight-rs.github.io/axum-book/
 
 ## 关于本书
 
