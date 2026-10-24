@@ -1,6 +1,26 @@
-# Ch 1 为什么是 Axum：Rust Web 生态地图
+# Axum 介绍
 
-> 状态：占位（待撰写）
+## Axum 是什么
+
+**Axum** 是一个现代，高性能且类型安全的 Rust Web 框架，由 Rust 异步生态的事实标准制定者 -- **Tokio** 团队亲儿子级别独立打造。
+
+与其他语言高度依赖 "运行时反射(Reflection)" 和过度依赖 "宏(Macros)" 的 Web 框架不同，
+Axum 的核心哲学是彻底榨干 Rust 的类型系统。它在编译期完成路由匹配，请求解析和响应生成的安全检查。
+
+Axum 不是空中楼阁，它从诞生之初就是为了无缝整合 Rust 底层最成熟的生态:
+
+- Hyper: 接入底层工业级的 HTTP 引擎，提供极致的解析性能。
+- Tower: 接入生态标准的 Service/Layer 抽象，用于构建组件和中间件。
+- Tokio: 接入坚如磐石的异步运行时，驱动高并发的网络事件循环。
+
+```mermaid
+graph TD
+    A[Axum 路由 Router / 处理器 Handler / 提取器 Extractor] --> B[Tower 服务与中间件抽象]
+    B --> C[Hyper HTTP/1.1 与 HTTP/2]
+    C --> D[Tokio 异步运行时]
+```
+
+## 为什么推荐 Axum
 
 ## 本章目标
 

@@ -8,13 +8,13 @@
 
 ## 关于本书
 
-| 项目 | 内容 |
-|---|---|
-| 定位 | 面向中级 Rust 开发者的生产级 Web 后端实战教程 |
+| 项目     | 内容                                                                               |
+| -------- | ---------------------------------------------------------------------------------- |
+| 定位     | 面向中级 Rust 开发者的生产级 Web 后端实战教程                                      |
 | 目标读者 | 掌握 Rust 基础（所有权、trait、异步入门）、写过 Web 服务、想用 Axum 做生产项目的人 |
-| 读完产出 | 能独立设计并交付一个可观测、可测试、可部署的 Axum 生产级服务 |
-| 技术基线 | Rust 2024 edition · axum 0.8+ · tokio 1.x · hyper 1.x · tower 0.5+ |
-| 主线项目 | 贯穿全书的 `realworld` 项目：多租户任务/内容管理 API |
+| 读完产出 | 能独立设计并交付一个可观测、可测试、可部署的 Axum 生产级服务                       |
+| 技术基线 | Rust 2024 edition · axum 0.8+ · tokio 1.x · hyper 1.x · tower 0.5+                 |
+| 主线项目 | 贯穿全书的 `realworld` 项目：多租户任务/内容管理 API                               |
 
 ## 全书目录
 
@@ -46,10 +46,12 @@ axum-book/
 
 ## 本地构建与预览
 
-需要 [mdBook](https://rust-lang.github.io/mdBook/)：
+- 需要 [mdBook](https://rust-lang.github.io/mdBook/)：
+- 需要 `mdbook-mermaid`：
 
 ```sh
 cargo install mdbook
+cargon install mdbook-mermaid # 渲染 mermaid 流程图
 
 # 本地预览（热重载）
 mdbook serve --open
