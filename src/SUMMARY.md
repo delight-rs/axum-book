@@ -2,8 +2,9 @@
 
 # 第一篇 · 基础篇：从零到完整 REST API
 
-- [Ch 1 为什么是 Axum：Rust Web 生态地图](./part1/ch01-intro.md)
-- [Ch 2 快速上手：最小可用服务](./part1/ch02-hello-world.md)
+- [Ch 1 Axum 简介](./part1/ch01-intro.md)
+
+<!--- [Ch 2 快速上手：最小可用服务](./part1/ch02-hello-world.md)
 - [Ch 3 路由系统](./part1/ch03-routing.md)
 - [Ch 4 提取器（Extractor）](./part1/ch04-extractors.md)
 - [Ch 5 响应与错误处理](./part1/ch05-error-handling.md)
@@ -30,13 +31,4 @@
 - [Ch 17 可观测性](./part4/ch17-observability.md)
 - [Ch 18 安全加固](./part4/ch18-security.md)
 - [Ch 19 性能优化与压测](./part4/ch19-performance.md)
-- [Ch 20 部署与运维](./part4/ch20-deployment.md)
-
-# 附录
-
-- [附录 A 依赖版本速查表](./appendix/appendix-a-versions.md)
-- [附录 B AppError 错误码全表](./appendix/appendix-b-error-codes.md)
-- [附录 C 术语表中英对照](./appendix/appendix-c-glossary.md)
-- [附录 D sea-orm 对照实现](./appendix/appendix-d-sea-orm.md)
-- [附录 E 每章习题参考答案](./appendix/appendix-e-exercises.md)
-- [附录 F 延伸阅读](./appendix/appendix-f-references.md)
+- [Ch 20 部署与运维](./part4/ch20-deployment.md)-->

@@ -2,7 +2,9 @@
 
 ## Axum 是什么
 
-**Axum 是由 tokio 官方团队维护的 Rust Web 框架——更准确地说，它是一个先进高效的 HTTP 路由与请求处理库**，构建在 `hyper` + `tower` + `tokio` 之上，是当前 Rust Web 服务端开发的事实主流之选。Axum 是 "薄封装"：自己不实现 HTTP 协议、不实现异步运行时、不发明中间件体系，全部站在巨人肩膀上：
+Axum 是由 tokio 官方团队维护的 Rust Web 框架，更准确地说，它是一个先进高效的 HTTP 路由与请求处理库，构建在 `hyper` + `tower` + `tokio` 之上，是当前 Rust Web 服务端开发的主流之选。Axum 是 "薄封装"：自己不实现 HTTP 协议、不实现异步运行时、不发明中间件体系，全部站在巨人肩膀上：
+
+### Axum 架构
 
 ```mermaid
 graph TD
@@ -18,7 +20,7 @@ graph TD
 | tower | `Service` 抽象、中间件、超时/限流 | 无（`Router` 本身就是一个 `tower::Service`） |
 | axum  | 路由、提取器、响应、错误模型      | **只做这一层，做得极精**                     |
 
-所以准确的说法是：**Axum = Hyper（HTTP）+ Tower（服务抽象）+ 类型安全的路由/提取器/响应体系**。
+所以说：Axum = Hyper（HTTP）+ Tower（服务抽象）+ 类型安全的路由/提取器/响应体系。
 
 ### Axum 核心能力
 
