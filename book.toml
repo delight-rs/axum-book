@@ -7,3 +7,9 @@ description = "Axum 工业级实战全书 (基于最新 0.8+ 版本)"
 
 [output.html]
 default-theme = "Rust"
+additional-js = ["assets/mermaid.min.js", "assets/mermaid-init.js"]
+
+[preprocessor]
+
+[preprocessor.mermaid]
+command = "mdbook-mermaid"
