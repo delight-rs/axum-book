@@ -70,8 +70,6 @@ graph TD
 | **M4** | 生产篇（Ch 17–20） | 可观测、安全、性能、部署                       | 5 周 |
 | **M5** | 收尾               | 校对、交叉引用、习题答案、发布                 | 2 周 |
 
-**总计约 23 周（单人全职）；双人可压缩到 12–14 周（M2 与 M4 可并行）。**
-
 ---
 
 ## 3. 全书目录（详细到节）
@@ -87,7 +85,6 @@ graph TD
   - 1.3 全书项目预览：`realworld` 最终形态演示（API 列表、架构图）
   - 1.4 阅读约定：术语表、代码块约定、勘误方式
 - **产出**：架构图（mermaid）、读者自检清单
-- **篇幅**：约 20 页 / 2 天
 
 #### Ch 2 快速上手：最小可用服务
 
@@ -98,7 +95,6 @@ graph TD
   - 2.3 工程结构规范（bin/lib 分层、模块划分）
   - 2.4 开发工作流：热重载、`RUST_LOG`、快速迭代
 - **配套代码**：`examples/ch02-hello-world`
-- **篇幅**：约 25 页 / 3 天
 
 #### Ch 3 路由系统
 
@@ -111,7 +107,6 @@ graph TD
   - 3.5 `routing::get` 与 handler 函数签名要求
   - 3.6 实践：规划 `realworld` 的完整路由表（RESTful 设计）
 - **配套代码**：`examples/ch03-routing`
-- **篇幅**：约 30 页 / 4 天
 
 #### Ch 4 提取器（Extractor）
 
@@ -124,7 +119,6 @@ graph TD
   - 4.5 自定义提取器实战：`AuthUser`（从 header 解析 JWT）、`Tenant`（多租户上下文）
   - 4.6 请求体限制与 `Bytes` / multipart（预告 Ch 14）
 - **配套代码**：`examples/ch04-extractors`
-- **篇幅**：约 35 页 / 5 天
 
 #### Ch 5 响应与错误处理
 
@@ -137,7 +131,6 @@ graph TD
   - 5.5 错误链与日志：`#[derive(thiserror::Error)]` + tracing 记录
   - 5.6 常见坑：handler 返回 `Result` 的 E 必须实现 `IntoResponse`
 - **配套代码**：`examples/ch05-error-handling`（此后全书复用该错误体系）
-- **篇幅**：约 30 页 / 4 天
 
 ---
 
@@ -154,7 +147,6 @@ graph TD
   - 6.5 作用域：全局 / 路由级 / handler 级（`layer` vs `route_layer`）
   - 6.6 `middleware::from_fn_with_state` 与带状态中间件
 - **配套代码**：`examples/ch06-middleware`
-- **篇幅**：约 40 页 / 6 天
 
 #### Ch 7 应用状态与配置管理
 
@@ -167,7 +159,6 @@ graph TD
   - 7.5 可替换抽象：用 trait 解耦存储层（为 Ch 11 DDD 铺路）
   - 7.6 优雅启动流程：配置加载 → 连接池 → 中间件 → 监听
 - **配套代码**：`examples/ch07-state-config`
-- **篇幅**：约 30 页 / 4 天
 
 #### Ch 8 异步运行时与并发模型
 
@@ -180,7 +171,6 @@ graph TD
   - 8.5 连接池原理与调优（sqlx pool 参数：max/min/idle_timeout）
   - 8.6 常见坑：`Mutex` vs `RwLock` 跨 await、`select!` 取消安全
 - **配套代码**：`examples/ch08-concurrency`（含压测脚本）
-- **篇幅**：约 40 页 / 6 天
 
 #### Ch 9 数据库实战（sqlx + PostgreSQL）
 
@@ -195,7 +185,6 @@ graph TD
   - 9.7 慢查询排查：`EXPLAIN ANALYZE`、索引设计、N+1 识别
   - 9.8 测试策略：testcontainers 起真实 PG，不 mock 数据库
 - **配套代码**：`realworld/infra` + `examples/ch09-db`
-- **篇幅**：约 45 页 / 7 天
 
 #### Ch 10 认证与会话基础
 
@@ -208,7 +197,6 @@ graph TD
   - 10.5 刷新令牌与登出；Redis 会话存储（Ch 15 深入）
   - 10.6 防暴力破解：登录限流（tower_governor 预告 Ch 18）
 - **配套代码**：`examples/ch10-auth`（`realworld` 用户模块雏形）
-- **篇幅**：约 35 页 / 5 天
 
 ---
 
@@ -227,7 +215,6 @@ graph TD
   - 11.5 错误类型分层：`domain::Error` vs `api::AppError` 映射
   - 11.6 数据库 schema 设计：约束、索引、软删除、`updated_at` 触发器
 - **配套代码**：`realworld/` 全部 crate 骨架 + migrations v1
-- **篇幅**：约 40 页 / 6 天
 
 #### Ch 12 用户系统与认证授权（升级版）
 
@@ -239,7 +226,6 @@ graph TD
   - 12.4 账户安全：密码重置、失败锁定、审计日志
   - 12.5 单元 + 集成测试全绿（复用 Ch 16 测试基建）
 - **配套代码**：`realworld/application/auth`
-- **篇幅**：约 40 页 / 6 天
 
 #### Ch 13 业务 CRUD 与查询工程
 
@@ -252,7 +238,6 @@ graph TD
   - 13.5 权限校验矩阵：成员/访客/管理员对每个资源的操作
   - 13.6 批量操作与事务边界
 - **配套代码**：`realworld/application/task` 等
-- **篇幅**：约 45 页 / 7 天
 
 #### Ch 14 文件上传与静态资源
 
@@ -264,7 +249,6 @@ graph TD
   - 14.4 文件下载：流式响应（`Body::from_stream`）、断点续传（Range）
   - 14.5 安全：类型校验（白名单）、病毒扫描（外部服务集成）、签名 URL
 - **配套代码**：`realworld/application/file`
-- **篇幅**：约 30 页 / 5 天
 
 #### Ch 15 实时通信：WebSocket 与 SSE
 
@@ -276,7 +260,6 @@ graph TD
   - 15.4 SSE 对比：事件流、自动重连、何时选 SSE 而非 WS
   - 15.5 背压与资源上限：连接数限制、写超时
 - **配套代码**：`realworld/application/realtime`
-- **篇幅**：约 35 页 / 5 天
 
 #### Ch 16 测试体系
 
@@ -289,7 +272,6 @@ graph TD
   - 16.5 快照测试（insta）与 golden 响应
   - 16.6 覆盖率：cargo-llvm-cov 基线（目标：领域层 ≥80%）
 - **配套代码**：全书测试基建 `shared/testing`
-- **篇幅**：约 35 页 / 5 天
 
 ---
 
@@ -306,7 +288,6 @@ graph TD
   - 17.5 OpenTelemetry：trace 导出到 Jaeger/Tempo（含 docker-compose 演示）
   - 17.6 健康检查：`/healthz`（liveness）/ `/readyz`（readiness，含 DB/Redis 探测）
 - **配套代码**：`realworld/api/observability`
-- **篇幅**：约 35 页 / 5 天
 
 #### Ch 18 安全加固
 
@@ -320,7 +301,6 @@ graph TD
   - 18.6 依赖安全：cargo-audit、cargo-deny 进 CI
   - 18.7 安全审计日志与告警
 - **配套代码**：`realworld/api/security`
-- **篇幅**：约 35 页 / 5 天
 
 #### Ch 19 性能优化与压测
 
@@ -332,7 +312,6 @@ graph TD
   - 19.4 优化清单：减少拷贝（`Bytes`）、连接复用、批量插入、缓存命中
   - 19.5 案例：`realworld` 从 2k → 20k QPS 的优化实录（逐步 diff 展示）
 - **配套代码**：`benchmarks/` + 压测脚本
-- **篇幅**：约 35 页 / 5 天
 
 #### Ch 20 部署与运维
 
@@ -345,7 +324,6 @@ graph TD
   - 20.5 发布策略：滚动更新、优雅停机验证、数据库迁移与回滚策略
   - 20.6 运维手册：监控指标阈值、故障排查 SOP
 - **配套代码**：`deploy/`（Dockerfile、compose、k8s、workflows）
-- **篇幅**：约 35 页 / 5 天
 
 ---
 
