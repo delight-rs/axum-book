@@ -50,8 +50,8 @@ axum-book/
 - 需要 `mdbook-mermaid`：
 
 ```sh
-cargo install mdbook
-cargon install mdbook-mermaid # 渲染 mermaid 流程图
+cargo install mdbook --version 0.5.4
+cargo install mdbook-mermaid # 渲染 mermaid 流程图
 
 # 本地预览（热重载）
 mdbook serve --open

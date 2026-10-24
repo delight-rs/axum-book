@@ -16,6 +16,7 @@ concurrency:
 
 env:
   MDBOOK_VERSION: v0.5.4
+  MDBOOK_MERMAID_VERSION: 0.17.1
 
 jobs:
   build:
@@ -24,6 +25,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Refuse to deploy stale commits
+        run: |
+          latest="$(git ls-remote origin refs/heads/main | cut -f1)"
+          if [ "$latest" != "$GITHUB_SHA" ]; then
+            echo "::error::$GITHUB_SHA is not the tip of main ($latest); refusing to deploy an outdated build."
+            exit 1
+          fi
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -44,20 +53,27 @@ jobs:
             ~/.cargo/bin
             ~/.cargo/registry
             ~/.cargo/git
-          key: ${{ runner.os }}-cargo-mdbook-mermaid-v1
+          key: ${{ runner.os }}-cargo-mdbook-mermaid-${{ env.MDBOOK_MERMAID_VERSION }}
           restore-keys: |
             ${{ runner.os }}-cargo-mdbook-mermaid-
 
-      - name: Install mdbook-mermaid
+      - name: Install mdbook-mermaid ${{ env.MDBOOK_MERMAID_VERSION }}
         run: |
           export PATH="$HOME/.cargo/bin:$PATH"
           if ! command -v mdbook-mermaid >/dev/null 2>&1; then
-            cargo install mdbook-mermaid --locked
+            cargo install mdbook-mermaid --version "${MDBOOK_MERMAID_VERSION}" --locked
           fi
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
 
       - name: Build book
         run: mdbook build
+
+      - name: Verify Mermaid preprocessing
+        run: |
+          if ! grep -Rqs 'class="mermaid"' book; then
+            echo "::error::No rendered Mermaid blocks found in book/; the mdbook-mermaid preprocessor did not run."
+            exit 1
+          fi
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
