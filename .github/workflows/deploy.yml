@@ -14,9 +14,13 @@ concurrency:
   group: "pages"
   cancel-in-progress: true
 
+env:
+  MDBOOK_VERSION: v0.5.4
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,11 +28,33 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      - name: Install mdBook
+      - name: Install mdBook ${{ env.MDBOOK_VERSION }}
         run: |
-          mkdir -p $HOME/.local/bin
-          curl -sSL https://github.com/rust-lang/mdBook/releases/download/v0.4.40/mdbook-v0.4.40-x86_64-unknown-linux-gnu.tar.gz | tar -xz --directory $HOME/.local/bin
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          mkdir -p "$HOME/.local/bin"
+          curl -sSfL --retry 3 --retry-delay 2 \
+            "https://github.com/rust-lang/mdBook/releases/download/${MDBOOK_VERSION}/mdbook-${MDBOOK_VERSION}-x86_64-unknown-linux-gnu.tar.gz" \
+            | tar -xz --directory "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/mdbook" --version
+
+      - name: Restore Cargo cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-mdbook-mermaid-v1
+          restore-keys: |
+            ${{ runner.os }}-cargo-mdbook-mermaid-
+
+      - name: Install mdbook-mermaid
+        run: |
+          export PATH="$HOME/.cargo/bin:$PATH"
+          if ! command -v mdbook-mermaid >/dev/null 2>&1; then
+            cargo install mdbook-mermaid --locked
+          fi
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
 
       - name: Build book
         run: mdbook build
@@ -43,6 +69,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: build
     steps:
       - name: Deploy to GitHub Pages
