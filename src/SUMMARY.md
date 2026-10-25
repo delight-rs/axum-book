@@ -3,8 +3,9 @@
 # 第一篇 · 基础篇：从零到完整 REST API
 
 - [Ch 1 Axum 简介](./part1/ch01-intro.md)
+- [Ch 2 快速上手：最小可用服务](./part1/ch02-hello-world.md)
 
-<!--- [Ch 2 快速上手：最小可用服务](./part1/ch02-hello-world.md)
+<!---
 - [Ch 3 路由系统](./part1/ch03-routing.md)
 - [Ch 4 提取器（Extractor）](./part1/ch04-extractors.md)
 - [Ch 5 响应与错误处理](./part1/ch05-error-handling.md)

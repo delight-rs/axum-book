@@ -28,6 +28,47 @@ rustup update
 
 如果还没有安装 Rust, 请到 [Installing Rust](https://rust-lang.org/learn/get-started/) 按官网说明安装对应平台的 Rust。
 
+### 2.1.2 开发工具
+
+推荐两款 Rust 开发工具，
+
+- [Zed](https://zed.dev/): • 下一代专为高性能与 AI 协同而生的轻量级代码编辑器。由 Rust 语言构建，支持 GPU 硬件加速，拥有极致的启动速度与打字响应率。同时，它原生集成了多款尖端 AI 结对编程助手。本书采用 `Zed` 作为核心开发工具。
+- [Vs code](https://code.visualstudio.com/): • 目前全球最成熟、最流行的通用代码编辑器。搭配官方首选的 `rust-analyzer` 插件，即可获得无与伦比的强类型补全、代码重构及宏展开跳转体验，是目前绝大多数 Rust 工程师的生产力标配。
+
+### 2.1.3 可选但推荐的工具
+
+#### bacon
+
+`bacon` 用于监听源码变化，一旦有改动就自动重新编译，重启服务，实现 "改完即生效" 的热重载。
+
+1. 使用 `--locked` 确保依赖树完全锁定，安装最稳定的生产级版本。
+
+   ```sh
+     cargo install --local bacon
+   ```
+
+2. 安装完成后，我们需要到项目根目录钟初始化 bacon 配置
+
+   ```sh
+     bacon --init
+   ```
+
+   这会在项目根目录下自动生成一个 `bacon.toml` 配置文件。bacon 的配置文件钟内置了 `check`,`clippy`, `test` 等默认任务(jobs), 我们也可以添加自定义的任务如 `jobs.run`
+
+   ```toml
+   # 1. 定义专属的开发热重载运行任务
+   [jobs.run]
+   command = ["cargo", "run"]
+   need_stdout = true
+   allow_warnings = true
+
+   # 2. 核心优化：配置文件监控的过滤规则
+   [bacon]
+   ignore = []
+   ```
+
+   然后通过 `bacon run`, 即可在后台拉起 Axum 服务。一旦按下 `Ctrl + S` 保存新修改的内容 bacon 会自动重新执行相关的任务：重新编译，原地重启 Axum 进程等。
+
 ## 本章目标
 
 15 分钟内跑起第一个服务，跑通开发闭环。
@@ -49,3 +90,7 @@ rustup update
 - [ ] 编写示例代码并通过 `cargo run` 验证
 - [ ] 补齐运行演示与常见坑
 - [ ] 添加章末习题
+
+```
+
+```
