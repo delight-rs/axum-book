@@ -35,9 +35,38 @@ rustup update
 - [Zed](https://zed.dev/): • 下一代专为高性能与 AI 协同而生的轻量级代码编辑器。由 Rust 语言构建，支持 GPU 硬件加速，拥有极致的启动速度与打字响应率。同时，它原生集成了多款尖端 AI 结对编程助手。本书采用 `Zed` 作为核心开发工具。
 - [Vs code](https://code.visualstudio.com/): • 目前全球最成熟、最流行的通用代码编辑器。搭配官方首选的 `rust-analyzer` 插件，即可获得无与伦比的强类型补全、代码重构及宏展开跳转体验，是目前绝大多数 Rust 工程师的生产力标配。
 
-## 2.2 Hello Axum
+## 2.2 Hello world
 
-在写代码之前，我们先建立心智模型。一个最小的 Axum 服务，本质上是三块拼图。
+在写代码之前，我们先建立心智模型。一个最小的 Axum 服务，它本质上是三块拼图。
+
+```mermaid
+flowchart LR
+  A[HTTP 请求] --> B[Router 路由表]
+  B --> C[Handler 处理器]
+  C --> D[HTTP 响应]
+```
+
+- **Router 路由表**：告诉程序哪个路径，哪种 HTTP 方法，需要交给哪个函数处理。比如将 `/` 的路径的 GET 请求交给 `root` 函数。
+- **Handler 处理器**：一个普通的异步函数，负责处理请求并返回响应。
+
+### 2.2.1 第一个最小服务
+
+明白了上述 Axum 服务拼图， 我们把相关代码写到一个 cargo 项目的 `main.rs` 文件里。
+
+先创建项目
+
+```sh
+cargo new hello-world
+```
+
+然后添加 `axum` 和 `tokio` 依赖，这里我们使用 axum 0.8 并且启用 tokio 所有的功能。
+
+```sh
+cargo add axum@0.8
+cargo add tokio@1 -F full
+```
+
+打开 `hello-world` 项目我们可以看到项目中有`Cargo.toml` 和 `src/main.rs` 两个文件。
 
 ### 2.3 可选但推荐的工具
 
