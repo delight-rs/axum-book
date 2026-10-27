@@ -68,6 +68,40 @@ cargo add tokio@1 -F full
 
 打开 `hello-world` 项目我们可以看到项目中有`Cargo.toml` 和 `src/main.rs` 两个文件。
 
+打开 `Cargo.toml` 文件我们可以看到下面的内容
+
+```toml
+[package]
+name = "hello-world"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+axum = "0.8"
+tokio = { version = "1", features = ["full"] }
+```
+
+`Cargo.toml` 文件定义的当前项目的元信息以及所需要的第三放依赖信息。然后我们打卡 `src/main.rs` 文件并将下面的内容复制到`main.rs` 文件钟。
+
+```rs
+use axum::{Router, routing::get};
+
+#[tokio::main]
+async fn main() {
+    let app = Router::new().route("/", get(root));
+
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
+        .await
+        .unwrap();
+    axum::serve(listener, app).await.unwrap();
+}
+
+async fn root() -> &'static str {
+    "Hello, world!"
+}
+
+```
+
 ### 2.3 可选但推荐的工具
 
 #### bacon
@@ -101,29 +135,3 @@ cargo add tokio@1 -F full
    ```
 
    然后通过 `bacon run`, 即可在后台拉起 Axum 服务。一旦按下 `Ctrl + S` 保存新修改的内容 bacon 会自动重新执行相关的任务：重新编译，原地重启 Axum 进程等。
-
-## 本章目标
-
-15 分钟内跑起第一个服务，跑通开发闭环。
-
-## 小节规划
-
-- 2.1 环境准备（rustup、cargo-watch、just）
-- 2.2 Hello, Axum：`axum::serve` + `Router` + 路由处理器
-- 2.3 工程结构规范（bin/lib 分层、模块划分）
-- 2.4 开发工作流：热重载、`RUST_LOG`、快速迭代
-
-## 配套代码
-
-- `examples/ch02-hello-world`（含 `README.md`：运行方式 + 期望输出）
-
-## 写作清单
-
-- [ ] 撰写正文
-- [ ] 编写示例代码并通过 `cargo run` 验证
-- [ ] 补齐运行演示与常见坑
-- [ ] 添加章末习题
-
-```
-
-```
