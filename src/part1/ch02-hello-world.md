@@ -102,6 +102,20 @@ async fn root() -> &'static str {
 
 ```
 
+### 2.2.3 运行服务
+
+在 terminal 中使用 `cargo run` 运行服务。当在 terminal 中看到下面的结果时表示服务启动成功，并且服务正在监听 `127.0.0.1:3000`
+
+```text
+Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.12s
+Running `target\debug\hello-world.exe`
+```
+
+打开一个浏览器，并在地址栏输入 `http://127.0.0.1:3000`, 然后回车，我们即可看到下面的内容:
+![Hello world](./images/minist-server.bmp)
+
+这样我们的第一个 Axum 服务器就完成了，是不是十分的简单。
+
 ### 2.3 可选但推荐的工具
 
 #### bacon
@@ -113,6 +127,8 @@ async fn root() -> &'static str {
    ```sh
      cargo install --local bacon
    ```
+
+````
 
 2. 安装完成后，我们需要到项目根目录钟初始化 bacon 配置
 
@@ -135,3 +151,4 @@ async fn root() -> &'static str {
    ```
 
    然后通过 `bacon run`, 即可在后台拉起 Axum 服务。一旦按下 `Ctrl + S` 保存新修改的内容 bacon 会自动重新执行相关的任务：重新编译，原地重启 Axum 进程等。
+````
