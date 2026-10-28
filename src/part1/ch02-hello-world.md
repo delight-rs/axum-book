@@ -102,7 +102,7 @@ async fn root() -> &'static str {
 
 ```
 
-### 2.2.3 运行服务
+### 2.2.2 运行服务
 
 在 terminal 中使用 `cargo run` 运行服务。当在 terminal 中看到下面的结果时表示服务启动成功，并且服务正在监听 `127.0.0.1:3000`
 
@@ -116,6 +116,15 @@ Running `target\debug\hello-world.exe`
 
 这样我们的第一个 Axum 服务器就完成了，是不是十分的简单。
 
+### 2.2.3 拆解 main.rs
+
+我们先在 `main` 函数
+
+- `#[tokio::main]属性宏`: 我们知道 Rust 的 main 函数默认不能是异步的。因此使用了来自 tokio 的属性宏 `#[tokio::main]` 包裹 main 函数，使其能够支持异步运行时。这样我们可以在 main 函数中使用异步操作。同时各类网络服务操作基本都是异步的，依次该属性宏是必不可少的。
+- `Router::new().route("/", get(root))`:
+  - `Router::new()` 方法会生成一个 Router, 然后通过 `route` 方法注册了一个路由规则 —— url 路径为 `/` 的 GET 请求交给 `root` 函数处理。
+  - `get(root)`：来自 `routing` 的 `get` 方法是一个由 HTTP 方法过滤器。它唯一的职责是：
+
 ### 2.3 可选但推荐的工具
 
 #### bacon
@@ -127,8 +136,6 @@ Running `target\debug\hello-world.exe`
    ```sh
      cargo install --local bacon
    ```
-
-````
 
 2. 安装完成后，我们需要到项目根目录钟初始化 bacon 配置
 
@@ -151,4 +158,3 @@ Running `target\debug\hello-world.exe`
    ```
 
    然后通过 `bacon run`, 即可在后台拉起 Axum 服务。一旦按下 `Ctrl + S` 保存新修改的内容 bacon 会自动重新执行相关的任务：重新编译，原地重启 Axum 进程等。
-````
