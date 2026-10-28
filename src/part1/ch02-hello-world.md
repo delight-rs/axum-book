@@ -118,12 +118,19 @@ Running `target\debug\hello-world.exe`
 
 ### 2.2.3 拆解 main.rs
 
-我们先在 `main` 函数
+我们先分析 `main` 函数
 
 - `#[tokio::main]属性宏`: 我们知道 Rust 的 main 函数默认不能是异步的。因此使用了来自 tokio 的属性宏 `#[tokio::main]` 包裹 main 函数，使其能够支持异步运行时。这样我们可以在 main 函数中使用异步操作。同时各类网络服务操作基本都是异步的，依次该属性宏是必不可少的。
 - `Router::new().route("/", get(root))`:
   - `Router::new()` 方法会生成一个 Router, 然后通过 `route` 方法注册了一个路由规则 —— url 路径为 `/` 的 GET 请求交给 `root` 函数处理。
-  - `get(root)`：来自 `routing` 的 `get` 方法是一个由 HTTP 方法过滤器。它唯一的职责是：
+  - `get(root)`：来自 `routing` 的 `get` 方法是一个由 HTTP 方法过滤器。它唯一的职责是：明确声明该路由只接收 HTTP GET 请求，并将一个普通的异步函数 (Handler) 包装成 axum 支持的网络服务。
+- `tokio::net::TcpListener::bind("127.0.0.1:3000")`: 创建一个 `TcpListener`, 监听 `127.0.0.1` 本机 ip, 并绑定本机 3000 端口。因为该操作是异步的，因此使用 `.await` 等待该操作完成，同时使用 `unwrap()` 直接开箱获取成功创建的 `listener`, 如果不成功则直接 panic。
+- `axum::serve(listener, app).await.unwrap()`: 将创建的 listener 和 app(路由) 交给 axum, 开始循环接受并处理请求。这个 `await` 在正常运行时永远不会返回，所以程序会一直卡在 `Running target\debug\hello-world.exe` 这里 —— 这正是服务器应有的样子。
+
+再分析 handler:
+
+- `async fn root() -> &'static str`: handler 就是一个普通的异步函数，没有任何魔法。返回值 `&'static str` 会被自动的转化成 HTTP 响应(内容是： `Hello, world`, 状态码是 `200 ok`)
+- 得益于 Rust 的类型系统，任何返回值只要它的类型实现了 `IntoResponse` trait, 即可用作 handler 的返回类型。Axum 为 `&'static str`, `String`, `Json` 等类型实现了 `IntoResponse` trait，因此它们可以做为 Handler 的返回类型。
 
 ### 2.3 可选但推荐的工具
 
