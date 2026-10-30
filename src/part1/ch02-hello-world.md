@@ -132,7 +132,11 @@ Running `target\debug\hello-world.exe`
 - `async fn root() -> &'static str`: handler 就是一个普通的异步函数，没有任何魔法。返回值 `&'static str` 会被自动的转化成 HTTP 响应(内容是： `Hello, world`, 状态码是 `200 ok`)
 - 得益于 Rust 的类型系统，任何返回值只要它的类型实现了 `IntoResponse` trait, 即可用作 handler 的返回类型。Axum 为 `&'static str`, `String`, `Json` 等类型实现了 `IntoResponse` trait，因此它们可以做为 Handler 的返回类型。
 
-### 2.3 可选但推荐的工具
+## 2.3 工程优化
+
+我们来做一个非常重要的结构调整。
+
+### 2.4 可选但推荐的工具
 
 #### bacon
 
