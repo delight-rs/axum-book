@@ -184,36 +184,15 @@ async fn health() -> &'static str {
 
 目前我们只有两个 handler，暂时只需要将它们都放在 `lib.rs` 中即可。如过 handler 数量过多，我们可以按业务将它们拆分成 `handlers/`, `routes`等子模块。
 
-### 2.4 可选但推荐的工具
+## 2.4 完善开发工作流
 
-#### bacon
+### 2.4.1 添加日志
 
-`bacon` 用于监听源码变化，一旦有改动就自动重新编译，重启服务，实现 "改完即生效" 的热重载。
+`tracing` 是 Rust 生态事实标准的日志库。Axum 和 tokio 内部均使用它追踪日志。我们的服务中也将使用 `tracing` 来管理日志。
 
-1. 使用 `--locked` 确保依赖树完全锁定，安装最稳定的生产级版本。
+首先在 `hello-world-2` `Cargo.toml` 中添加 `tracing` 相关的依赖
 
-   ```sh
-     cargo install --local bacon
-   ```
-
-2. 安装完成后，我们需要到项目根目录钟初始化 bacon 配置
-
-   ```sh
-     bacon --init
-   ```
-
-   这会在项目根目录下自动生成一个 `bacon.toml` 配置文件。bacon 的配置文件钟内置了 `check`,`clippy`, `test` 等默认任务(jobs), 我们也可以添加自定义的任务如 `jobs.run`
-
-   ```toml
-   # 1. 定义专属的开发热重载运行任务
-   [jobs.run]
-   command = ["cargo", "run"]
-   need_stdout = true
-   allow_warnings = true
-
-   # 2. 核心优化：配置文件监控的过滤规则
-   [bacon]
-   ignore = []
-   ```
-
-   然后通过 `bacon run`, 即可在后台拉起 Axum 服务。一旦按下 `Ctrl + S` 保存新修改的内容 bacon 会自动重新执行相关的任务：重新编译，原地重启 Axum 进程等。
+```toml
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"]}
+```
