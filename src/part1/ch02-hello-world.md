@@ -248,3 +248,35 @@ RUST_LOG=hello_world_2=warn,hyper=info cargo run
 ```
 
 > 注意：环境变量的写法因 shell 而异：`RUST_LOG=warn cargo run` 适用于 bash/zsh; 而 Windows 的 PowerShell 则要写成 `$env:RUST_LOG="warn"; cargo run`， cmd 则要写成 `set RUST_LOG=debug && cargo run`
+
+### 2.4.3 热重载
+
+目前我们的项目每次更改代码，都要重新手动执行 `cargo run` 才能使最新的内容生效，这样的模式太麻烦了。可以使用 `bacon` 监听代码的变化，一旦有改动就自动重新编译，重启服务，实现 “改完即生效” 的热重载。
+
+1. 安装 `bacon`, 这里我们使用 `--locked` 确保依赖树完全锁定，安装最稳定的生成级版本。
+
+   ```sh
+   cargo install --local bacon
+   ```
+
+2. 安装完成后，我们需要到 `hello-world-2` 项目根目录中初始化 bacon 配置
+
+   ```sh
+   bacon --init
+   ```
+
+   这会在项目根目录下自动生成一个 `bacon.toml` 配置文件。bacon 的配置文件钟内置了 `check`,`clippy`, `test` 等默认任务(jobs), 我们也可以添加自定义的任务如 `jobs.run`
+
+   ```toml
+   # 1. 定义专属的开发热重载运行任务
+   [jobs.run]
+   command = ["cargo", "run"]
+   need_stdout = true
+   allow_warnings = true
+
+   # 2. 核心优化：配置文件监控的过滤规则
+   [bacon]
+   ignore = []
+   ```
+
+   然后通过 `bacon run`, 即可在后台拉起 Axum 服务。一旦按下 `Ctrl + S` 保存新修改的内容 bacon 会自动重新执行相关的任务：重新编译，原地重启 Axum 进程等。
