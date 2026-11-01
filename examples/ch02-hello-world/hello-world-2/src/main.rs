@@ -8,7 +8,7 @@ async fn main() {
             tracing_subscriber::EnvFilter::try_from_default_env()
                 .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("hello_world_2=debug")),
         )
-        .into();
+        .init();
 
     let addr = "127.0.0.1:3000";
     let listener = TcpListener::bind(addr).await.unwrap();
