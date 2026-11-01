@@ -196,3 +196,55 @@ async fn health() -> &'static str {
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"]}
 ```
+
+然后修改 `main.rs` 为:
+
+```rust
+use hello_world_2::app;
+use tokio::net::TcpListener;
+
+#[tokio::main]
+async fn main() {
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("hello_world_2=debug")),
+        )
+        .init();
+
+    let addr = "127.0.0.1:3000";
+    let listener = TcpListener::bind(addr).await.unwrap();
+
+    tracing::info!("Listening on http://{addr}");
+
+    axum::serve(listener, app()).await.unwrap();
+}
+```
+
+我们新增加了几行代码:
+
+- `tracing_subscriber::fmt()`：安装一个把日志打印到标准输出的订阅器
+- `with_env_filter(...)`：设置日志过滤规则
+- `EnvFilter::try_from_default_env()`：优先读取环境变量 `RUST_LOG`, 没有设置该环境变量时，使用默认值 `hello_world_2=debug`;
+
+在 terminal 中运行 `cargo run` 可以看到下面的日志：
+
+```text
+2026-11-01T03:17:14.756381Z  INFO hello_world_2: Listening on http://127.0.0.1:3000
+```
+
+### 2.4.2 控制日志输出
+
+日志的级别从低到高一般是：`trace < debug < info < warn < error`。我们可以使用 `RUST_LOG` 控制日志的输出量。 如下面的命名只会让 `hello-world-2` 输出 warn 级以上级别的日志。
+
+```sh
+RUST_LOG=warn cargo run
+```
+
+如果项目的依赖库也有大量日志，可以按 `目标=级别`精准控制，用逗号分隔多个规则：
+
+```sh
+RUST_LOG=hello_world_2=warn,hyper=info cargo run
+```
+
+> 注意：环境变量的写法因 shell 而异：`RUST_LOG=warn cargo run` 适用于 bash/zsh; 而 Windows 的 PowerShell 则要写成 `$env:RUST_LOG="warn"; cargo run`， cmd 则要写成 `set RUST_LOG=debug && cargo run`
