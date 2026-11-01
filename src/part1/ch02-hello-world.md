@@ -145,6 +145,45 @@ Running `target\debug\hello-world.exe`
 2. **可复用**：lib 可以被其它的 crate 引用，二进制 main.rs 只是薄薄的一层壳。
 3. **职责清晰**：随着 handler 增多，把逻辑都塞进 `main.rs` 只会导致项目越来越难维护。
 
+### 2.3.1 调整后的项目结构
+
+```text
+examples/ch02-hello-world/hello-world-2
+├── Cargo.toml
+└── src/
+    ├── main.rs
+    └── lib.rs
+```
+
+其中 `src/lib.rs`: 负责路由和 handler
+
+```rs
+use axum::{Router, routing::get};
+
+pub fn app() -> Router {
+    Router::new()
+        .route("/", get(root))
+        .route("/health", get(health))
+}
+
+async fn root() -> &'static str {
+    "Hello, world"
+}
+
+async fn health() -> &'static str {
+    "ok"
+}
+```
+
+`src/main.rs` 负责启动项目
+
+观察 `lib.rs` 和 `main.rs` 中的代码我们可以注意到两点:
+
+- 包名 `hello-world-2` 里面的连字符，在 Rust 代码中要替换成下划线 `use hello_world_2`。
+- 当一个包同时拥有 `src/lib.rs` 和 `src/main.rs` 时，cargo 会同时编译出一个 lib 和一个同名的二进制可执行文件，在二进制文件中可以像使用第三方 lib 一样通过 `use` 关键字使用自身的库。
+
+目前我们只有两个 handler，暂时只需要将它们都放在 `lib.rs` 中即可。如过 handler 数量过多，我们可以按业务将它们拆分成 `handlers/`, `routes`等子模块。
+
 ### 2.4 可选但推荐的工具
 
 #### bacon
