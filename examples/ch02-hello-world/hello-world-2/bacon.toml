@@ -42,11 +42,7 @@ need_stdout = false
 # Run clippy in pedantic mode
 # The 'dismiss' feature may come handy
 [jobs.pedantic]
-command = [
-	"cargo", "clippy",
-	"--",
-	"-W", "clippy::pedantic",
-]
+command = ["cargo", "clippy", "--", "-W", "clippy::pedantic"]
 need_stdout = false
 
 # This job lets you run
@@ -59,8 +55,12 @@ need_stdout = true
 
 [jobs.nextest]
 command = [
-    "cargo", "nextest", "run",
-    "--hide-progress-bar", "--failure-output", "final"
+    "cargo",
+    "nextest",
+    "run",
+    "--hide-progress-bar",
+    "--failure-output",
+    "final",
 ]
 need_stdout = true
 analyzer = "nextest"
@@ -74,20 +74,28 @@ need_stdout = false
 [jobs.doc-open]
 command = ["cargo", "doc", "--no-deps", "--open"]
 need_stdout = false
-on_success = "back" # so that we don't open the browser at each change
+on_success = "back"                               # so that we don't open the browser at each change
 
 # You can run your application and have the result displayed in bacon,
 # if it makes sense for this crate.
 [jobs.run]
 command = [
-    "cargo", "run",
+    "cargo",
+    "run",
     # put launch parameters for your program behind a `--` separator
 ]
 need_stdout = true
 allow_warnings = true
-background = true
-show_command_error_code = true
 scroll_anchor = "auto"
+
+# 允许你在 Bacon 的 TUI 界面中与你的程序进行交互（输入/输出）
+# # 🌟 关键修改：必须为 false，让 Bacon 在代码变化时能够杀掉并重启旧进程
+background = false
+
+# 🌟 关键添加：定义检测到代码变化时的策略。
+# "kill" 意味着一旦保存文件，立刻杀死当前运行的程序并重启（实现最快响应）
+on_change_strategy = "kill_then_restart"
+watch = ["src", "Cargo.toml"]
 
 # Run your long-running application (eg server) and have the result displayed in bacon.
 # For programs that never stop (eg a server), `background` is set to false
@@ -101,7 +109,8 @@ scroll_anchor = "auto"
 # long running programs (uncomment it if you need it)
 [jobs.run-long]
 command = [
-    "cargo", "run",
+    "cargo",
+    "run",
     # put launch parameters for your program behind a `--` separator
 ]
 need_stdout = true

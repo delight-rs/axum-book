@@ -265,18 +265,32 @@ RUST_LOG=hello_world_2=warn,hyper=info cargo run
    bacon --init
    ```
 
-   这会在项目根目录下自动生成一个 `bacon.toml` 配置文件。bacon 的配置文件钟内置了 `check`,`clippy`, `test` 等默认任务(jobs), 我们也可以添加自定义的任务如 `jobs.run`
+   这会在项目根目录下自动生成一个 `bacon.toml` 配置文件。bacon 的配置文件钟内置了 `check`,`clippy`, `test` ，`run` 等默认任务。
+
+3. 修改 `bacon.toml` 配置实现热更新。 Bacon 的默认逻辑是“等待当前任务彻底执行完，再启动下一次”。如果是 `cargo check` 这种检查任务，等它检查完成很正常；但对于 `cargo run` 启动的常驻进程，它永远不会结束。因此要实现热更新我们需要修改两项关键配置：
+
+   - background：设置为 `false`, 让 Bacon 在代码变化时能够杀掉并重启旧进程
+   - on_change_strategy：设置为 `kill_then_restart`，意味着一旦保存文件，立刻杀死当前运行的程序并重启（实现最快响应）
 
    ```toml
-   # 1. 定义专属的开发热重载运行任务
    [jobs.run]
-   command = ["cargo", "run"]
+   command = [
+       "cargo",
+       "run",
+       # put launch parameters for your program behind a `--` separator
+   ]
    need_stdout = true
    allow_warnings = true
+   scroll_anchor = "auto"
 
-   # 2. 核心优化：配置文件监控的过滤规则
-   [bacon]
-   ignore = []
+   # 允许你在 Bacon 的 TUI 界面中与你的程序进行交互（输入/输出）
+   # # 🌟 关键修改：必须为 false，让 Bacon 在代码变化时能够杀掉并重启旧进程
+   background = false
+
+   # 🌟 关键添加：定义检测到代码变化时的策略。
+   # "kill_then_restart" 意味着一旦保存文件，立刻杀死当前运行的程序并重启
+   on_change_strategy = "kill_then_restart"
+   watch = ["src", "Cargo.toml"]
    ```
 
-   然后通过 `bacon run`, 即可在后台拉起 Axum 服务。一旦按下 `Ctrl + S` 保存新修改的内容 bacon 会自动重新执行相关的任务：重新编译，原地重启 Axum 进程等。
+   修改完`jobs.run` 的配置后，通过 `bacon run`, 即可在后台拉起 Axum 服务。一旦按下 `Ctrl + S` 保存新修改的内容 bacon 会自动重新执行相关的任务：重新编译，原地重启 Axum 进程等。
