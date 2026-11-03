@@ -294,3 +294,30 @@ RUST_LOG=hello_world_2=warn,hyper=info cargo run
    ```
 
    修改完`jobs.run` 的配置后，通过 `bacon run`, 即可在后台拉起 Axum 服务。一旦按下 `Ctrl + S` 保存新修改的内容 bacon 会自动重新执行相关的任务：重新编译，原地重启 Axum 进程等。
+
+### 2.4.4 完整项目运行演示
+
+至此，示例项目的最终结构如下
+
+```text
+examples/ch02-hello-world/hello-world-2
+├── bacon.toml
+├── Cargo.toml
+└── src/
+    ├── main.rs
+    └── lib.rs
+```
+
+通过 `bacon run` 启动服务
+
+![hello-world-2 run](images/hello-world-2-run.bmp)
+
+验证两个路由：
+
+```text
+$ curl http://127.0.0.1:3000
+Hello, world
+
+$ curl http://127.0.0.1:3000/health
+ok
+```

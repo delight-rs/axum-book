@@ -7,7 +7,7 @@ pub fn app() -> Router {
 }
 
 async fn root() -> &'static str {
-    "Hello, world1"
+    "Hello, world"
 }
 
 async fn health() -> &'static str {
