@@ -4,7 +4,7 @@
 
 [![mdBook](https://img.shields.io/badge/built%20with-mdBook-blue)](https://rust-lang.github.io/mdBook/)
 
-**当前状态**：完成 ch02-hello-world， 详见 [Roadmap.md](./Roadmap.md)。
+**当前状态**：完成 ch02-hello-world、ch03-routing（含 19 个测试的配套示例）， 详见 [Roadmap.md](./Roadmap.md)。
 
 **在线阅读**: https://delight-rs.github.io/axum-book/
 
