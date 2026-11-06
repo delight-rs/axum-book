@@ -66,7 +66,7 @@ curl http://127.0.0.1:3000
 # hello from ch03
 ```
 
-### 3.1.3 拆分与合并路由
+### 3.1.3 合并路由：merge
 
 几十个路由塞在一个函数里，代码的可读性很快就就会归零。通过 `merge` 方法可以解决整个问题：先把不同业务的路由各自组装好，然后再组装成一个总路由。如下面的代码中我们用 `merge` 将`user_routes` 和 `asset_routes`两个路由合并成一个总路由。
 
@@ -87,3 +87,33 @@ let app = Router::new()
 
 1. 两个 Router的 state的类型必须一致。带不同 state 的 Router 不能直接合并，需要先使用 `with_state` 方法对齐 Router 的 state.
 2. 两个 Router 不能同时有 fallback, 类似空号提示音全局只有一条。否则会直接 panic。
+
+### 3.1.4 嵌套路由：nest
+
+`merge` 是将路由合并在一起，`nest` 则是使路由具有层级关系。它通过把整个子路由挂到某个路径前缀下面实现路由嵌套，如下面的路由代码中，把 `api_v1` 路由通过 nest 方法挂在了 `/api/v1` 路径下。
+
+```rust
+let api_v1 = Router::new()
+    .route("/ping", any(ping))
+    .route("/health", get(health));
+
+let app = Router::new().nest("/api/v1", api_v1)；
+```
+
+这时 `GET /api/v1/health` 由 `health` 处理。这样 API 版本化。如我们要实现`v2` 版本的 api，只需要加一个 `nest("/api/v2", api_v2)`就可以了。
+
+`nest` 有两个硬规则：
+
+- **路径不能含通配段**，如`nest("/api/{*rest}", ...)` 将直接 panic：
+
+  ```text
+  Invalid route: nested routes cannot contain wildcards (*)
+  ```
+
+- **路径不能是根路径**，如`nest("/", ...)`， 在 axum 0.8 中这会 panic：
+
+  ```text
+  Nesting at the root is no longer supported. Use merge instead.
+  ```
+
+  对于根路径，应该使用用 `merge` 方法，将子路由合并到总路由中。
