@@ -21,7 +21,69 @@
 
 ```mermaid
 flowchart TD
-  A[请求 /users/42 PUT] -> B{路径匹配}
-  B ——> |静态段优先，逐层从左往右|
-
+  A[请求 /users/42 PUT] --> B{路径匹配}
+  B --> |静态段优先，逐层从左往右| C{方法匹配}
+  B --> |没有路由命中| F[fallback 404]
+  C --> |命中| H[handler]
+  C --> |方法未注册| D[405 + Allow 头]
 ```
+
+记住这条链：**先按路径找位置，再按方法定去留，最后 fallback 兜底。** 本章要讲的三处"反直觉行为"，全是这条链的推论。
+
+### 3.1.2 组装路由：route
+
+`route` 是 Axum 中路由表最基本的添加路由的入口，它接收两个参数：
+
+- 第一个参数 `path` 是路由的路径
+- 第二个参数是 `MethodRouter`, 一个或几个 HTTP 方法对应的 handler 集合
+
+本章的示例服务把全部知识点装进一个路由表，完整代码在 `examples/ch03-routing`。先看总装图：
+
+```rust
+{{#include ../../examples/ch03-routing/src/lib.rs:app}}
+```
+
+```text
+examples/ch03-routing
+├── Cargo.toml
+└── src/
+    ├── main.rs   # 启动壳：日志 + 监听 + axum::serve
+    └── lib.rs    # 路由表 app() + 19 个测试
+```
+
+`app()` 就是整个服务。我们先把它运行起来
+
+```sh
+cd examples/ch03-routing/
+cargo run
+```
+
+服务监听 `http://127.0.0.1:3000`
+然后用 curl 模拟请求：
+
+```sh
+curl http://127.0.0.1:3000
+# hello from ch03
+```
+
+### 3.1.3 拆分与合并路由
+
+几十个路由塞在一个函数里，代码的可读性很快就就会归零。通过 `merge` 方法可以解决整个问题：先把不同业务的路由各自组装好，然后再组装成一个总路由。如下面的代码中我们用 `merge` 将`user_routes` 和 `asset_routes`两个路由合并成一个总路由。
+
+```rust
+let user_routes = Router::new()
+    .route("/users", get(list_users).post(create_user))
+    .route("/users/{id}", get(get_user));
+
+let asset_routes = Router::new()
+    .route("/assets/{*path}", get(get_asset));
+
+let app = Router::new()
+    .merge(user_routes)
+    .merge(asset_routes);
+```
+
+`merge` 方法是将不同的路由合并在一起，路由之间是并联的关系，要使路由具有层级关系应该使用 `nest`。注意完全相同的路由 merge 会触发重叠 panic。`merge` 方法有两个限制：
+
+1. 两个 Router的 state的类型必须一致。带不同 state 的 Router 不能直接合并，需要先使用 `with_state` 方法对齐 Router 的 state.
+2. 两个 Router 不能同时有 fallback, 类似空号提示音全局只有一条。否则会直接 panic。
