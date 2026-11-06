@@ -117,3 +117,20 @@ let app = Router::new().nest("/api/v1", api_v1)；
   ```
 
   对于根路径，应该使用用 `merge` 方法，将子路由合并到总路由中。
+
+### 3.1.5 fallback
+
+`fallback` 注册全局唯一的那条兜底的"空号提示音"。它只处理一种请求：**路径不匹配任何路由**的请求。
+
+```rust
+{{#include ../../examples/ch03-routing/src/lib.rs:middleware_and_fallbacks}}
+```
+
+```sh
+$ curl http://127.0.0.1:3000/nope
+no route for /nope
+```
+
+注意 `handle_404` 收到了 `Uri` 提取器 —— 跟普通的 handler 一样，fallback handler可以用任何提取器拿到请求信息。
+
+一个容易误会的点：**方法不匹配不会触发 fallback**。如`GET /users` 存在而 `DELETE /users` 未注册时，返回的是 405，不是 fallback。就像电话总机的"分机号存在但占线"和"空号"是两回事。
