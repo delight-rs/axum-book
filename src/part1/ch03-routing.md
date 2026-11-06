@@ -134,3 +134,37 @@ no route for /nope
 注意 `handle_404` 收到了 `Uri` 提取器 —— 跟普通的 handler 一样，fallback handler可以用任何提取器拿到请求信息。
 
 一个容易误会的点：**方法不匹配不会触发 fallback**。如`GET /users` 存在而 `DELETE /users` 未注册时，返回的是 405，不是 fallback。就像电话总机的"分机号存在但占线"和"空号"是两回事。
+
+### 3.1.6 开发期 panic
+
+Axum router 的校验哲学是"配置错误当场爆炸"，不让错误拖到运行时变成 404。以下是router注册期最常见的三个 panic：
+
+| 操作                              | panic 信息                                                       |
+| --------------------------------- | ---------------------------------------------------------------- |
+| merge 两个都带 fallback 的 Router | ``Cannot merge two `Router`s that both have a fallback``         |
+| nest 到根路径 `/`                 | `Nesting at the root is no longer supported. Use merge instead.` |
+| nest 路径含通配段                 | `Invalid route: nested routes cannot contain wildcards (*)`      |
+
+```rust
+{{#include ../../examples/ch03-routing/src/lib.rs:test_panics}}
+```
+
+## 3.2 路径语法
+
+### 3.2.1 三种路径段
+
+一条路径由 `/` 分隔的段组成。每个段只有三种形态：
+
+### 3.2.1 三种段
+
+一条路径由 `/` 分隔的段组成。每个段只有三种形态：
+
+| 形态   | 写法       | 匹配范围               | 示例                                                     |
+| ------ | ---------- | ---------------------- | -------------------------------------------------------- |
+| 静态段 | `/users`   | 精确等于该字符串       | `/users` 只匹配 `/users`                                 |
+| 捕获段 | `/{id}`    | 任意单个非空段         | `/users/{id}` 匹配 `/users/42`，不匹配 `/users/42/posts` |
+| 通配段 | `/{*path}` | 剩余所有段，必须放最后 | `/assets/{*path}` 匹配 `/assets/js/app.js`               |
+
+路径必须以 `/` 开头；空路径会 panic：``Paths must start with a `/`. Use "/" for root routes``。
+
+捕获段和通配段可以混搭，同一条路径里想放几个放几个（但每个段至多一个捕获）：
