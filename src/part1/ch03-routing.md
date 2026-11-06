@@ -191,3 +191,32 @@ me
 ```
 
 这条规则让你可以放心地把"静态路由"（`/users/me`、`/tasks/all`）和"通用参数路由"（`/users/{id}`）同时注册，不用担心通用参数路由覆盖静态路由。
+
+### 3.2.3 捕获段
+
+捕获段捕获的值不是字符串，而是一个类型 —— handler 中定义的什么类型，axum 就按该类型进行解析。解析失败自动返回 400，默认不需要进行手动的错误处理。如下面的 Users 路由
+
+```rust
+// Users route
+route(
+    "/users/{id}",
+    get(get_user).put(update_user).delete(delete_user),
+)
+
+// Users handler
+async fn get_user(Path(id): Path<u64>) -> String {
+    format!("user {id}")
+}
+```
+
+```sh
+$ curl http://127.0.0.1:3000/users/42
+user 42
+
+$ curl -i http://127.0.0.1:3000/users/abc
+HTTP/1.1 400 Bad Request
+```
+
+Axum 会将捕获的 id 自动解析为 handler 中声明 `u64` 类型。将 `abc` 解析为 `u64` 会失败，这时请求被拒绝，handler 不会被调用。这就是"正确性优先"的落地方式：将脏数据拦在门口。
+
+同时捕获值还自动进行 URL 解码，例如`/search/rust%20web` 拿到的是 `rust web`。
