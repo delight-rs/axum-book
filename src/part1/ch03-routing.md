@@ -220,3 +220,35 @@ HTTP/1.1 400 Bad Request
 Axum 会将捕获的 id 自动解析为 handler 中声明 `u64` 类型。将 `abc` 解析为 `u64` 会失败，这时请求被拒绝，handler 不会被调用。这就是"正确性优先"的落地方式：将脏数据拦在门口。
 
 同时捕获值还自动进行 URL 解码，例如`/search/rust%20web` 拿到的是 `rust web`。
+
+### 3.2.4 通配段
+
+通配段 `/{*rest}` 捕获剩余所有路径片段，但有两个限制。
+
+**边界一：不匹配空段。** `/assets/{*path}` 不匹配 `/assets` 和 `/assets/`：
+
+```sh
+$ curl http://127.0.0.1:3000/assets/js/app.js
+asset: js/app.js
+
+$ curl -i http://127.0.0.1:3000/assets/
+HTTP/1.1 404 Not Found
+```
+
+`/assets/` 这种带尾斜杠的路径是踩坑重灾区。想让它也命中，就需要加一条精确路由 `/assets/`，或者干脆在反向代理层做尾斜杠规范化。
+
+**边界二：捕获的值不含前斜杠。** 请求 `/assets/js/app.js` 拿到的 `path` 是 `js/app.js`，不是 `/js/app.js`。
+
+捕获段同样不匹配空段：`/users/` 不会命中 `/users/{id}`，它同样会返回 404。
+
+### 3.2.5 段内静态后缀
+
+axum 0.8.x 不支持 `/{id}.png` 这种"捕获 + 静态后缀"的写法。本书锁定的 0.8.9 在注册 `/avatars/{id}.png` 时会直接 panic：
+
+```text
+Invalid route "/avatars/{id}.png": Only one parameter is allowed per path segment
+```
+
+这个能力在 matchit 0.9 中实现，尚未随 axum 0.8.x 发布。0.8 的捕获段必须是**完整独立的一段**。
+
+> 注意：axum 仓库 main 分支的文档已经展示了 `/avatars/{id}.png` 写法，那是未发布版本的文档。
