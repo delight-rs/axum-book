@@ -252,3 +252,60 @@ Invalid route "/avatars/{id}.png": Only one parameter is allowed per path segmen
 这个能力在 matchit 0.9 中实现，尚未随 axum 0.8.x 发布。0.8 的捕获段必须是**完整独立的一段**。
 
 > 注意：axum 仓库 main 分支的文档已经展示了 `/avatars/{id}.png` 写法，那是未发布版本的文档。
+
+## 3.3 多方法处理与 MethodRouter
+
+`route` 的第二个参数是 `MethodRouter`，一个"方法 → handler"的小表。`routing` 模块为每个常用方法提供了顶层构造函数：
+
+- get
+- post
+- put
+- delete
+- patch
+- head
+- options
+- trace
+- connect
+- any
+
+我们可以通过多种方式为 route 注册handler 处理方法。
+
+### 链式与合并
+
+同一个路径的多个方法，两种写法等价：
+
+```rust
+// 写法一：链式
+.route("/users/{id}", get(get_user).put(update_user).delete(delete_user))
+
+// 写法二：重复 route，自动合并
+.route("/users/{id}", get(get_user))
+.route("/users/{id}", put(update_user))
+.route("/users/{id}", delete(delete_user))
+```
+
+但要注意**同一路径同一方法注册两次会 panic**——`MethodRouter` 的合并会检测方法是否重叠：
+
+```text
+Overlapping method route. Handler for `GET /users` already exists
+```
+
+这个 panic 通常发生在复制粘贴后忘了改方法名，这个 panic 对开发时发现这类问题十分的有帮助。
+
+### 用 on 组合任意方法位
+
+`on` 接受一个 `MethodFilter` 位掩码，可以用 `on`自由组合方法。示例里 `/report` 只收 GET 和 HEAD：
+
+```rust
+.route("/report", on(MethodFilter::GET.or(MethodFilter::HEAD), report))
+```
+
+```rust
+{{#include ../../examples/ch03-routing/src/lib.rs:test_on_filter}}
+```
+
+`any` 是 `on` 的极端：所有方法（含 CONNECT、OPTIONS）都落到同一个 handler。WebSocket 端点、探活端点通常使用用这个方法。示例里 `/api/v1/ping` 就是 `any`：
+
+```rust
+{{#include ../../examples/ch03-routing/src/lib.rs:test_any}}
+```
