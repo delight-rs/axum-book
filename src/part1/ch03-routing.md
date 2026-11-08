@@ -309,3 +309,24 @@ Overlapping method route. Handler for `GET /users` already exists
 ```rust
 {{#include ../../examples/ch03-routing/src/lib.rs:test_any}}
 ```
+
+### 405 与 Allow 头
+
+路径命中但方法未注册时，axum 默认返回 `405 Method Not Allowed`，并自动带上 `Allow` 头列出该路径支持的方法：
+
+```sh
+$ curl -i -X PATCH http://127.0.0.1:3000/users/42
+HTTP/1.1 405 Method Not Allowed
+content-type: text/plain; charset=utf-8
+allow: GET,HEAD,PUT,DELETE
+method not allowed
+```
+
+```rust
+{{#include ../../examples/ch03-routing/src/lib.rs:test_405}}
+```
+
+两点细节：
+
+- `Allow` 头里的 `GET,HEAD` 成对出现，在 HTTP 协议和很多 Web 框架中，如果你允许客户端使用 GET 请求某个接口，那么系统默认也应该（或自动）允许 HEAD 请求。因此在响应头的 Allow 字段中，它们通常会同时出现。
+- 默认 405 的响应体是空字符串。示例中使用 `method_not_allowed_fallback` 定制了它。
