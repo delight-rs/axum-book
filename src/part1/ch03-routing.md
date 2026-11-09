@@ -330,3 +330,16 @@ method not allowed
 
 - `Allow` 头里的 `GET,HEAD` 成对出现，在 HTTP 协议和很多 Web 框架中，如果你允许客户端使用 GET 请求某个接口，那么系统默认也应该（或自动）允许 HEAD 请求。因此在响应头的 Allow 字段中，它们通常会同时出现。
 - 默认 405 的响应体是空字符串。示例中使用 `method_not_allowed_fallback` 定制了它。
+
+### method_not_allowed_fallback
+
+想自定义"路径对、方法错"时路由的响应，需要用 `method_not_allowed_fallback`。它作用于**此前注册的所有 MethodRouter**，因此必须放在所有 `route` 之后：
+
+```rust
+Router::new()
+    // ... 所有 route 先注册完，然后注册 method_not_allowed_fallback ...
+    .method_not_allowed_fallback(handle_405)
+    .fallback(handle_404)
+```
+
+一个 Router 上，`method_not_allowed_fallback`（管 405）和 `fallback`（管 404）可以并存，各自处理各自的领域。
