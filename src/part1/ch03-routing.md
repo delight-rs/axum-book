@@ -343,3 +343,26 @@ Router::new()
 ```
 
 一个 Router 上，`method_not_allowed_fallback`（管 405）和 `fallback`（管 404）可以并存，各自处理各自的领域。
+
+### nest 会剥掉前缀
+
+这是 `nest` 最重要的行为，axum 官方文档专门用一节讲它：**嵌套路由里的 handler 看到的 URI 是剥掉前缀之后的**。
+
+```rust
+{{#include ../../examples/ch03-routing/src/lib.rs:api_handlers}}
+```
+
+```sh
+$ curl http://127.0.0.1:3000/api/v1/ping
+pong, uri = /ping
+```
+
+请求的完整 URI 是 `/api/v1/ping`，`ping` handler 里拿到的 `Uri` 却是 `/ping`。
+
+```rust
+{{#include ../../examples/ch03-routing/src/lib.rs:test_nest_prefix}}
+```
+
+这么设计的理由：静态文件服务。内层 Router 想当然地认为自己的根就是 `/api/v1`，它内部的路径计算（拼相对路径、列目录）才不用感知外层前缀。代价是要拿原始 URI 时得用 `OriginalUri` 提取器；只要内层自己捕获的参数，用 `InnerPath`。两者都是 Ch 4 的内容。
+
+`nest` 与通配路由还有一个区别：`nest("/foo", ...)` 匹配 `/foo`，但不匹配 `/foo/`。尾斜杠的坑又出现了，规则同 3.2.5。
