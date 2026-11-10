@@ -366,3 +366,54 @@ pong, uri = /ping
 这么设计的理由：静态文件服务。内层 Router 想当然地认为自己的根就是 `/api/v1`，它内部的路径计算（拼相对路径、列目录）才不用感知外层前缀。代价是要拿原始 URI 时得用 `OriginalUri` 提取器；只要内层自己捕获的参数，用 `InnerPath`。两者都是 Ch 4 的内容。
 
 `nest` 与通配路由还有一个区别：`nest("/foo", ...)` 匹配 `/foo`，但不匹配 `/foo/`。尾斜杠的坑又出现了，规则同 3.2.5。
+
+### fallback 的继承链
+
+嵌套 Router 如果没有注册自己的 fallback 时，会继承外层 fallback；如果注册了，就用自己注册的 fallback：
+
+```rust
+let api_v1 = Router::new().route("/ping", any(ping)); // 没有自己的 fallback
+
+let app = Router::new()
+    .nest("/api/v1", api_v1)
+    .fallback(handle_404);
+```
+
+`GET /api/v1/nope` 进到 `api_v1`，里面没有匹配路由，也没有自己的 fallback，于是沿继承链回到外层，由 `handle_404` 处理。实测：
+
+```sh
+$ curl -i http://127.0.0.1:3000/api/v1/nope
+HTTP/1.1 404 Not Found
+no route for /api/v1/nope
+```
+
+### route_layer：中间件
+
+要把中间件挂载在某个子路由上，有两种方式，使用`layer` 和 `route_layer`。这两者的差别在于它们的使用边界不同：
+
+|                              | `layer` | `route_layer` |
+| ---------------------------- | ------- | ------------- |
+| 是否作用于已注册路由         | 是      | 是            |
+| 是否作用于 fallback          | 是      | 否            |
+| 对"未命中路由"的请求是否执行 | 是      | 否            |
+
+`route_layer` 的语义是"**只有请求命中真实路由时，中间件才运行**"。这对鉴权类中间件是十分有用的，如果不使用该中间件，一个不存在的路径会被鉴权中间件先拦成 401，而正确的语义应该是 404。
+
+示例里 `api_v1` 用 `route_layer` 挂了一个标记中间件，验证它的作用范围：
+
+```rust
+{{#include ../../examples/ch03-routing/src/lib.rs:test_middleware_scope}}
+```
+
+```sh
+$ curl -i http://127.0.0.1:3000/api/v1/health
+HTTP/1.1 200 OK
+x-api-middleware: hit
+```
+
+`route_layer` 还有两个使用约束：
+
+1. 只包裹调用**之前**注册的路由，所以要放在所有 `route` 之后。
+2. 若 Router 上一条路由都没有，它会 panic —— 中间件生效范围为空，axum 认为这一定是 bug。
+
+我们将在 Ch 6 中完整讨论中间件如何写、`from_fn` 和 `from_fn_with_state` 的区别、以及tower 的 Layer 模。本节只说明中间件的边界。
