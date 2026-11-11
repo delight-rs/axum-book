@@ -417,3 +417,26 @@ x-api-middleware: hit
 2. 若 Router 上一条路由都没有，它会 panic —— 中间件生效范围为空，axum 认为这一定是 bug。
 
 我们将在 Ch 6 中完整讨论中间件如何写、`from_fn` 和 `from_fn_with_state` 的区别、以及tower 的 Layer 模。本节只说明中间件的边界。
+
+## 3.5 routing::get 与 handler
+
+`routing::get(handler)` 把 handler 函数包装成一个只能由 GET 识别的 `MethodRouter`，类型是 `MethodRouter<S, Infallible>`。 此时 handler 函数被约束在 `Handler` trait 上。这使得某些函数能传进 `get`、某些不能。
+
+### handler 的约束
+
+从 axum 源码的 `impl Handler for F` 可以以的得知 handler：
+
+1. 它是异步函数** ：需要是`async fn`或返回 `Future` 的闭包。
+2. 返回类型需要实现 `IntoResponse`： 如返回类型是`&'static str`、`String`、`Json<T>`、`(StatusCode, T)`。
+3. 可克隆：`Clone + Send + Sync + 'static`。0.8 起新增 `Sync` 要求。
+4. 返回的 Future 是 `Send`：这是跨线程调度的前提。
+5. 参数都是提取器：每个参数需要实现 `FromRequestParts` 或 `FromRequest`。
+6. 参数个数上限为 **16**。
+
+下面示例里的 handler 全部满足以上的约束：
+
+```rust
+async fn get_user(Path(id): Path<u64>) -> String { ... }
+async fn handle_404(uri: Uri) -> (StatusCode, String) { ... }
+async fn mark_api_middleware(req: Request, next: Next) -> Response { ... }
+```
