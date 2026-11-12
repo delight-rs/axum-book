@@ -418,7 +418,7 @@ x-api-middleware: hit
 
 我们将在 Ch 6 中完整讨论中间件如何写、`from_fn` 和 `from_fn_with_state` 的区别、以及tower 的 Layer 模。本节只说明中间件的边界。
 
-## 3.5 routing::get 与 handler
+## 3.5 handler
 
 `routing::get(handler)` 把 handler 函数包装成一个只能由 GET 识别的 `MethodRouter`，类型是 `MethodRouter<S, Infallible>`。 此时 handler 函数被约束在 `Handler` trait 上。这使得某些函数能传进 `get`、某些不能。
 
@@ -440,3 +440,22 @@ async fn get_user(Path(id): Path<u64>) -> String { ... }
 async fn handle_404(uri: Uri) -> (StatusCode, String) { ... }
 async fn mark_api_middleware(req: Request, next: Next) -> Response { ... }
 ```
+
+### handler 参数顺序的潜规则
+
+handler 参数顺序有一个规则：**消费 Request body 的提取器只能是最后一个参数**。`Json`、`Bytes` 这类读 body 的提取器实现了 `FromRequest`，其余的参数（`Path`、`Query`、`State`、`HeaderMap`）实现了 `FromRequestParts`。所以参数 `(State, Json)` 合法，而`(Json, State)` 不合法。
+
+### 值本身就是 handler
+
+Axum 还为所有满足 `T: IntoResponse + Clone` 约束的类型的实现了 `Handler`。因此你可以直接把一个具体的值传入 `get` 中，作为响应返回。
+
+```rust
+.route("/", get("Hello, World!"))
+.route("/users", post((StatusCode::CREATED, Json(json!({"id": 1})))))
+```
+
+这使得 mock 接口时非常方便，不用为定义一个 handler。
+
+### 签名写错了怎么办
+
+如果 handler 的参数不符合约束时，其编译错误很长。 为此 Axum 提供了 `#[axum::debug_handler]` 宏，它会将错误信息转换成人类可阅读的形式。在开发时调试 handler 签名问题，只需要将其运用到 handler 上即可。
