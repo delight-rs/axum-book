@@ -465,3 +465,39 @@ Axum 还为所有满足 `T: IntoResponse + Clone` 约束的类型的实现了 `H
 现在，我们运用本章所学的路由拆分与嵌套技巧，为主线实战项目 realworld（一个多租户任务与内容管理 API）设计一套生产级的路由架构。
 
 良好的 API 设计始于清晰的约束。在动手编写代码之前，我们先确立路由设计的几项核心原则（如版本控制、资源层级与权限隔离），随后再据此推演出完整的路由映射表，并最终落地为模块化的 Axum 代码结构。
+
+### RestFull API 设计原则
+
+1. **资源用名词复数，关系用层级**：`/tasks/{id}/comments` 表达"任务下的评论"，不写 `/getComments?taskId=1`。
+2. **动词交给 HTTP 方法**：GET 读取、POST 创建建、PATCH 修改改、DELETE 删出。URL 里出现 `create`、`delete` 就是设计坏了。
+3. **版本放进路径前缀**：`/api/v1` 用 `nest` 一次生效，v2 只加一个 nest。
+4. **认证与租户信息放 header**：`Authorization: Bearer <JWT>` 和 `X-Tenant-Id`，URL 保持纯净。
+5. **分页与筛选放 query**：`?page=1&page_size=20&status=todo`。
+
+### realworld v1 路由表
+
+| 方法   | 路径                          | 处理器（示意）     | 认证 | 说明                       |
+| ------ | ----------------------------- | ------------------ | ---- | -------------------------- |
+| POST   | `/api/v1/auth/register`       | `auth::register`   | 公开 | 注册                       |
+| POST   | `/api/v1/auth/login`          | `auth::login`      | 公开 | 登录，签发 JWT             |
+| POST   | `/api/v1/auth/refresh`        | `auth::refresh`    | 公开 | 刷新 token                 |
+| POST   | `/api/v1/auth/logout`         | `auth::logout`     | 🔒   | 登出                       |
+| GET    | `/api/v1/auth/me`             | `auth::me`         | 🔒   | 当前用户信息               |
+| GET    | `/api/v1/users`               | `users::list`      | 🔒   | 用户列表，分页             |
+| GET    | `/api/v1/users/{id}`          | `users::show`      | 🔒   | 用户详情                   |
+| PATCH  | `/api/v1/users/{id}`          | `users::update`    | 🔒   | 更新资料（仅本人或管理员） |
+| GET    | `/api/v1/tasks`               | `tasks::list`      | 🔒   | 任务列表，分页 + 筛选      |
+| POST   | `/api/v1/tasks`               | `tasks::create`    | 🔒   | 创建任务                   |
+| GET    | `/api/v1/tasks/{id}`          | `tasks::show`      | 🔒   | 任务详情                   |
+| PATCH  | `/api/v1/tasks/{id}`          | `tasks::update`    | 🔒   | 更新任务                   |
+| DELETE | `/api/v1/tasks/{id}`          | `tasks::delete`    | 🔒   | 删除任务（软删除，Ch 13）  |
+| GET    | `/api/v1/tasks/{id}/comments` | `comments::list`   | 🔒   | 评论列表                   |
+| POST   | `/api/v1/tasks/{id}/comments` | `comments::create` | 🔒   | 发表评论                   |
+| POST   | `/api/v1/files`               | `files::upload`    | 🔒   | 上传（multipart，Ch 14）   |
+| GET    | `/api/v1/files/{id}`          | `files::meta`      | 🔒   | 文件元信息                 |
+| GET    | `/api/v1/files/{id}/download` | `files::download`  | 🔒   | 下载（流式）               |
+| GET    | `/api/v1/stream`              | `realtime::sse`    | 🔒   | SSE 事件流（Ch 15）        |
+| GET    | `/api/v1/ws`                  | `realtime::ws`     | 🔒   | WebSocket（Ch 15）         |
+| GET    | `/healthz`                    | `health`           | 公开 | 健康检查，供负载均衡探活   |
+
+`/healthz` 刻意放在 `/api/v1` 外面：它给基础设施用，不参与业务版本管理。
