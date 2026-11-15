@@ -106,17 +106,17 @@ let app = Router::new().nest("/api/v1", api_v1)；
 
 - **路径不能含通配段**，如`nest("/api/{*rest}", ...)` 将直接 panic：
 
-  ```text
-  Invalid route: nested routes cannot contain wildcards (*)
-  ```
+    ```text
+    Invalid route: nested routes cannot contain wildcards (*)
+    ```
 
 - **路径不能是根路径**，如`nest("/", ...)`， 在 axum 0.8 中这会 panic：
 
-  ```text
-  Nesting at the root is no longer supported. Use merge instead.
-  ```
+    ```text
+    Nesting at the root is no longer supported. Use merge instead.
+    ```
 
-  对于根路径，应该使用用 `merge` 方法，将子路由合并到总路由中。
+    对于根路径，应该使用用 `merge` 方法，将子路由合并到总路由中。
 
 ### 3.1.5 fallback
 
@@ -172,10 +172,10 @@ Axum router 的校验哲学是"配置错误当场爆炸"，不让错误拖到运
 1. **静态段优先于捕获段**，从左至右逐层比较，然后决定匹配哪个路径。捕获段与通配段在同一层互斥（`/assets/{id}` 与 `/assets/{*path}` 共存时会 panic），所以 Axum 0.8 里不存在“捕获 vs 通配谁优先”的问题，只有“静态 vs 捕获”有优先级语义。
 2. 同一层里，两个不同 name 的捕获段（`/users/{id}` 与 `/users/{name}`）不能共存，注册时 panic：
 
-   ```text
-   Invalid route "/users/{name}": Insertion failed due to conflict
-   with previously registered route: /users/{id}
-   ```
+    ```text
+    Invalid route "/users/{name}": Insertion failed due to conflict
+    with previously registered route: /users/{id}
+    ```
 
 3. 路由注册顺序不影响优先级——决定胜负的是路径片段的类型，不是谁先注册。
 
@@ -501,3 +501,62 @@ Axum 还为所有满足 `T: IntoResponse + Clone` 约束的类型的实现了 `H
 | GET    | `/healthz`                    | `health`           | 公开 | 健康检查，供负载均衡探活   |
 
 `/healthz` 刻意放在 `/api/v1` 外面：它给基础设施用，不参与业务版本管理。
+
+### 路由组织骨架
+
+路由表按上面的分组拆成五个 Router，通过 `merge` 将路由合并进 `api_v1`，再通过`nest` 嵌套到 `/api/v1`：
+
+```rust
+pub fn app(state: AppState) -> Router {
+    let auth_routes = Router::new()
+        .route("/auth/register", post(auth::register))
+        .route("/auth/login", post(auth::login))
+        .route("/auth/refresh", post(auth::refresh))
+        .route("/auth/logout", post(auth::logout))
+        .route("/auth/me", get(auth::me));
+
+    let user_routes = Router::new()
+        .route("/users", get(users::list))
+        .route("/users/{id}", get(users::show).patch(users::update));
+
+    let task_routes = Router::new()
+        .route("/tasks", get(tasks::list).post(tasks::create))
+        .route("/tasks/{id}", get(tasks::show).patch(tasks::update).delete(tasks::delete))
+        .route("/tasks/{id}/comments", get(comments::list).post(comments::create));
+
+    let file_routes = Router::new()
+        .route("/files", post(files::upload))
+        .route("/files/{id}", get(files::meta))
+        .route("/files/{id}/download", get(files::download));
+
+    let realtime_routes = Router::new()
+        .route("/stream", get(realtime::sse))
+        .route("/ws", get(realtime::ws));
+
+    let api_v1 = Router::new()
+        .merge(auth_routes)
+        .merge(user_routes)
+        .merge(task_routes)
+        .merge(file_routes)
+        .merge(realtime_routes)
+        // 鉴权只保护"真实存在的路由"，404 原样放行
+        .route_layer(middleware::from_fn_with_state(
+            state.clone(),
+            auth::require_auth,
+        ));
+
+    Router::new()
+        .route("/healthz", get(health))
+        .nest("/api/v1", api_v1)
+        .with_state(state)
+}
+```
+
+上述的四个设计决策，每个都有出处：
+
+- **`merge` 平铺分组**：五个业务 Router 各自独立演化，互不干涉。
+- **`nest` 挂版本**：`/api/v1` 一次声明，所有业务自动获得版本前缀。
+- **`route_layer` 做鉴权**：404 原样放行，不会被鉴权中间件拦成 401；公开路由如何豁免，在之后的章节中确定。
+- **`/healthz` 在外层**：不受业务中间件影响，永远轻量。
+
+`AppState`、`with_state`、`from_fn_with_state` 是之后章节的内容，这里只需要理解其组织形式。
