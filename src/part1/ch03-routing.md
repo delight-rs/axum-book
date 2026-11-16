@@ -48,7 +48,7 @@ examples/ch03-routing
 ├── Cargo.toml
 └── src/
     ├── main.rs   # 启动壳：日志 + 监听 + axum::serve
-    └── lib.rs    # 路由表 app() + 19 个测试
+    └── lib.rs    # 路由表 app() + 26 个测试
 ```
 
 `app()` 就是整个服务。我们先把它运行起来
@@ -170,12 +170,14 @@ Axum router 的校验哲学是"配置错误当场爆炸"，不让错误拖到运
 多个模式同时能匹配一个请求时，匹配路由的优先级顺序是：
 
 1. **静态段优先于捕获段**，从左至右逐层比较，然后决定匹配哪个路径。捕获段与通配段在同一层互斥（`/assets/{id}` 与 `/assets/{*path}` 共存时会 panic），所以 Axum 0.8 里不存在“捕获 vs 通配谁优先”的问题，只有“静态 vs 捕获”有优先级语义。
-2. 同一层里，两个不同 name 的捕获段（`/users/{id}` 与 `/users/{name}`）不能共存，注册时 panic：
+2. 同一路径模式用不同 name 的捕获段重复注册（`/users/{id}` 与 `/users/{name}`）会 panic——两条路由形状完全相同，只有参数名不同：
 
     ```text
     Invalid route "/users/{name}": Insertion failed due to conflict
     with previously registered route: /users/{id}
     ```
+
+    参数名不参与匹配，只用于把捕获值交给 handler；后续路径不同时（如 `/users/{id}/profile` 与 `/users/{name}/tasks`），同层不同名的捕获段可以共存。
 
 3. 路由注册顺序不影响优先级——决定胜负的是路径片段的类型，不是谁先注册。
 
@@ -249,7 +251,7 @@ axum 0.8.x 不支持 `/{id}.png` 这种"捕获 + 静态后缀"的写法。本书
 Invalid route "/avatars/{id}.png": Only one parameter is allowed per path segment
 ```
 
-这个能力在 matchit 0.9 中实现，尚未随 axum 0.8.x 发布。0.8 的捕获段必须是**完整独立的一段**。
+这个能力在 matchit 0.9 中实现，尚未随 axum 0.8.x 发布。0.8 的捕获段可以带静态前缀（`/avatars/avatar-{id}`），但不能带静态后缀。
 
 > 注意：axum 仓库 main 分支的文档已经展示了 `/avatars/{id}.png` 写法，那是未发布版本的文档。
 
@@ -560,3 +562,30 @@ pub fn app(state: AppState) -> Router {
 - **`/healthz` 在外层**：不受业务中间件影响，永远轻量。
 
 `AppState`、`with_state`、`from_fn_with_state` 是之后章节的内容，这里只需要理解其组织形式。
+
+## 3.7 常见坑
+
+下面十条按踩坑频率排列。每条给出成因与对策，并标注 `examples/ch03-routing/src/lib.rs` 中对应的测试函数；书稿结论以这些测试通过为准。
+
+1. **沿用 0.7 的 `:id` / `*rest` 语法**。0.8 在注册路由时直接 panic，错误信息会说明路径段不能以 `:` / `*` 开头，并提示改用 `{id}` / `{*rest}` 这类花括号语法。测试：`old_capture_syntax_panics`、`old_wildcard_syntax_panics`。
+2. **用 fallback 处理 405**。`fallback` 只处理路径不匹配的请求；路径匹配而方法未注册的请求由 `method_not_allowed_fallback` 处理，默认返回 405 与 `Allow` 头。两者可以同时注册，但职责不能互换。测试：`fallback_only_fires_when_no_route_matches`、`wrong_method_returns_405_with_allow_header`。
+3. **忘记 nest 会剥掉前缀**。嵌套 Router 中的 handler 拿到的 `Uri` 是去掉前缀后的值：请求 `/api/v1/ping`，handler 里看到的是 `/ping`。按这个 `Uri` 拼接对外链接会得到错误地址；需要原始 URI 时使用 `OriginalUri`（Ch 4）。测试：`nest_strips_prefix_from_uri`。
+4. **尾斜杠返回 404**。通配段与捕获段都要求段非空：`/assets/{*path}` 不匹配 `/assets/`，`/users/{id}` 不匹配 `/users/`。需要兼容时显式注册带尾斜杠的路由，或在反向代理层统一规范化。测试：`wildcard_does_not_match_empty`、`capture_does_not_match_trailing_slash`。
+5. **merge 两个都带 fallback 的 Router**。注册期 panic：``Cannot merge two `Router`s that both have a fallback``。只想保留一边时，先对被丢弃的一边调用 `reset_fallback`。测试：`merge_two_fallbacks_panics`、`reset_fallback_allows_merge`。
+6. **同一路径重复注册同一方法**。panic：``Overlapping method route. Handler for `GET /users` already exists``。同一路径注册不同方法是合法的，`MethodRouter` 会自动合并；这个 panic 多半来自复制粘贴后漏改方法。测试：`duplicate_route_panics`。
+7. **同一路径模式用不同参数名重复注册**。`/users/{id}` 与 `/users/{name}` 形状相同、仅参数名不同，注册时 panic；匹配只按段的位置进行，参数名不参与匹配。形状不同时可以共存，例如 `/users/{id}/profile` 与 `/users/{name}/tasks`。另外，同一层的捕获段与通配段互斥：`/assets/{id}` 与 `/assets/{*path}` 不能共存。测试：`two_different_captures_at_same_level_conflict`、`same_level_capture_names_can_diverge`、`capture_and_wildcard_at_same_level_conflict`。
+8. **误解 route_layer 的生效范围**。`route_layer` 只对调用之前注册、且请求命中的路由执行，不作用于 fallback，也不作用于未命中的请求。鉴权放在这一层，不存在的路径才会返回 404，而不是被拦成 401。测试：`nested_middleware_only_runs_on_matched_routes`。
+9. **忽略 get 对 HEAD 的处理**。`get` 注册的 handler 也会处理 HEAD 请求：handler 正常执行，返回前响应体被清空，`Content-Length` 保留。需要不同的状态码或响应头时显式注册 `head`，HEAD 的 handler 优先于 `get`。测试：`get_route_also_serves_head`。
+10. **段内静态后缀**。`/avatars/{id}.png` 在 0.8.x 注册即 panic：`Only one parameter is allowed per path segment`。捕获段可以在段内带静态前缀（`/avatars/avatar-{id}`），但不能带静态后缀。matchit 0.9 已支持后缀写法，需要等后续 axum 版本发布。测试：`static_prefix_before_capture_matches`、`static_suffix_in_capture_segment_panics`。
+
+以上 panic 全部发生在路由注册阶段，服务启动时就会暴露，不会延迟到运行时才表现为 404。
+
+## 3.8 小结
+
+本章的匹配顺序可以压缩成一句话：
+
+> **先路径（静态优先，逐层从左往右），再方法（未注册返回 405），路径未命中交给 fallback。**
+
+路由组织的三件套各司其职：`merge` 合并路由表、`nest` 挂载前缀并剥掉前缀、`fallback` 处理路径未命中的请求。路径参数在 0.8 统一为 `{id}` 与 `{*rest}` 语法，旧语法在注册时 panic。handler 是满足 `Handler` 约束的异步函数：参数为提取器、返回类型实现 `IntoResponse`、参数不超过 16 个。
+
+下一章进入 Axum 最核心的类型系统：提取器。本章反复出现的 `Path<T>` 只是其中一员。

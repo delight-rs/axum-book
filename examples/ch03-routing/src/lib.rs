@@ -235,7 +235,35 @@ mod tests {
         assert_eq!(status, StatusCode::OK);
         assert_eq!(body, "assets index");
     }
+
+    #[tokio::test]
+    async fn capture_does_not_match_trailing_slash() {
+        // /users/{id} 的捕获段要求非空，/users/ 落入 fallback。
+        let (status, _, _) = send(Method::GET, "/users/").await;
+        assert_eq!(status, StatusCode::NOT_FOUND);
+    }
     // ANCHOR_END: test_wildcard
+
+    #[tokio::test]
+    async fn static_prefix_before_capture_matches() {
+        // 捕获段前允许静态前缀，前缀不进入捕获值。
+        let router = Router::new().route(
+            "/avatars/avatar-{id}",
+            get(|Path(id): Path<u64>| async move { format!("avatar {id}") }),
+        );
+        let response = router
+            .oneshot(
+                Request::builder()
+                    .uri("/avatars/avatar-42")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        assert_eq!(&body[..], b"avatar 42");
+    }
 
     // ---- 3.3 多方法处理 ----
 
@@ -269,9 +297,11 @@ mod tests {
     // ANCHOR: test_head
     #[tokio::test]
     async fn get_route_also_serves_head() {
-        // get 路由兼收 HEAD 请求（响应体在传输层被剥离）。
-        let (status, _, _) = send(Method::HEAD, "/users/me").await;
+        // get 路由兼收 HEAD 请求：handler 正常执行，响应体被清空，Content-Length 保留。
+        let (status, headers, body) = send(Method::HEAD, "/users/me").await;
         assert_eq!(status, StatusCode::OK);
+        assert!(body.is_empty());
+        assert_eq!(headers.get("content-length").unwrap(), "2");
     }
     // ANCHOR_END: test_head
 
@@ -391,11 +421,48 @@ mod tests {
     #[test]
     #[should_panic]
     fn two_different_captures_at_same_level_conflict() {
-        // 同一层两个不同名字的捕获段（/users/{id} 与 /users/{name}）
-        // 无法共存，注册时 panic。
+        // 形状相同、仅参数名不同的两条路由无法共存，注册时 panic。
         let _: Router = Router::new()
             .route("/users/{id}", get(get_user))
             .route("/users/{name}", get(get_user));
     }
     // ANCHOR_END: test_panics
+
+    #[test]
+    fn reset_fallback_allows_merge() {
+        // 丢弃其中一边的 fallback 后，两个 Router 可以正常合并。
+        let a = Router::new().route("/a", get(root)).fallback(handle_404);
+        let b = Router::new().route("/b", get(root)).fallback(handle_404);
+        let _: Router = a.reset_fallback().merge(b);
+    }
+
+    #[test]
+    fn same_level_capture_names_can_diverge() {
+        // 同一层不同名的捕获段，只要后续路径不同，就可以共存。
+        let _: Router = Router::new()
+            .route("/users/{id}/profile", get(root))
+            .route("/users/{name}/tasks", get(root));
+    }
+
+    #[test]
+    #[should_panic]
+    fn capture_and_wildcard_at_same_level_conflict() {
+        // 同一层的捕获段与通配段互斥。
+        let _: Router = Router::new()
+            .route("/assets/{id}", get(get_user))
+            .route("/assets/{*path}", get(get_asset));
+    }
+
+    #[test]
+    fn static_prefix_before_capture_is_allowed() {
+        // matchit 允许捕获段前有静态前缀，但不允许有静态后缀。
+        let _: Router = Router::new().route("/avatars/avatar-{id}", get(get_user));
+    }
+
+    #[test]
+    #[should_panic(expected = "Only one parameter is allowed per path segment")]
+    fn static_suffix_in_capture_segment_panics() {
+        // 0.8.x 不支持段内静态后缀。
+        let _: Router = Router::new().route("/avatars/{id}.png", get(get_user));
+    }
 }
