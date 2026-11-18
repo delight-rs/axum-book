@@ -2,7 +2,7 @@
 
 > **本章目标**：掌握 Axum 最核心的类型系统。读完这一章，你能解释 handler 的每个参数由谁构造、为什么消费请求体的参数必须放在最后，并能写出带自定义 rejection 的提取器。
 >
-> 上一章我们把请求送进了正确的 handler（处理器），但 handler 只接收了路径参数。真实接口还要读取查询串、JSON 请求体、请求头、共享状态和当前用户。Axum 把「从请求中取出某个值」抽象成 trait，这一章把这个 trait 拆开。
+> 上一章我们把请求送进了正确的 handler（处理器），但 handler 只接收了路径参数。真实接口还要读取查询串、JSON 请求体、请求头、共享状态和当前用户。Axum 把「从请求中取出某个值」抽象成 trait，本章对这个 trait 进行详细解析。
 
 ## 4.1 提取器模型
 
@@ -16,7 +16,7 @@ async fn get_user(Path(id): Path<u64>) -> String {
 }
 ```
 
-`get_user` 只有一个参数，但代码里没有任何地方调用 `get_user(42)`。调用发生在 axum 内部：请求匹配到路由后，axum 按参数类型逐个构造值，再把这些值传进函数。`Path<u64>` 就是构造规则，这种类型叫**提取器（extractor）**。
+`get_user` 只有一个参数，但代码里没有任何地方调用 `get_user(42)`。它的调用发生在 axum 内部：请求匹配到路由后，axum 按参数类型逐个构造值，再把这些值传进函数。2. 参数类型 `Path<u64>` 是一套解析规则（从路径参数中提取并反序列化为 u64）。在 Axum 中，所有实现了提取协议（FromRequest 或 FromRequestParts）的类型，都叫**提取器（Extractor）**。
 
 用生活化的说法：一次请求像一份快递，面单（方法、URI、请求头）可以反复查看，包裹（body）只能拆一次；提取器就是按类型填写的取件单。
 
@@ -29,6 +29,7 @@ async fn get_user(Path(id): Path<u64>) -> String {
 
 `Parts` 是 `http::request::Parts`，包含请求方法、URI、版本、请求头和 `Extensions`；`Request` 在此基础上还持有 `Body`。`Body` 不能克隆，读取一次就结束，这是参数顺序规则的根源。
 
+// TODO - Review
 把两个 trait 的形状压缩成示意代码：
 
 ```rust
