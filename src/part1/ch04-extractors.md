@@ -29,7 +29,6 @@ async fn get_user(Path(id): Path<u64>) -> String {
 
 `Parts` 是 `http::request::Parts`，包含请求方法、URI、版本、请求头和 `Extensions`；`Request` 在此基础上还持有 `Body`。`Body` 不能克隆，读取一次就结束，这是参数顺序规则的根源。
 
-// TODO - Review
 把两个 trait 的形状压缩成示意代码：
 
 ```rust
@@ -45,14 +44,14 @@ pub trait FromRequest<S>: Sized {
 }
 ```
 
-两个设计点值得注意：
+有两个设计点值得注意：
 
-1. **失败也是一种响应**。`Rejection`（拒绝响应）必须实现 `IntoResponse`。提取失败时，axum 直接把 rejection 转成 HTTP 响应，handler 不会执行。默认的 400、415、422 都来自这里。
-2. **提取器可以读取应用状态**。两个 trait 的第二个参数都是 `&S`，`S` 是 Router 的状态类型。`State<T>` 提取器就是从这里读取共享状态的。
+1. **失败也是一种响应**。`Rejection`（拒绝响应）必须实现 `IntoResponse`。提取失败时，axum 直接把 rejection 转成 HTTP 响应， 同时handler 不会执行。失败时默认的 400、415、422 code都来自这里。
+2. **提取器可以读取应用状态**。上述的两个 trait 的第二个参数都是 `&S`，`S` 是 Router 的状态类型。`State<T>` 提取器就是从这里读取共享状态的。
 
 ### 4.1.2 请求被拆成 parts 与 body
 
-一次请求进入 handler 之前，axum 先把它拆成两部分：
+当请求进入 handler 之前，axum 先把它拆成 `parts` 和 `body` 两部分：
 
 ```mermaid
 flowchart TD
@@ -66,7 +65,7 @@ flowchart TD
   D --> H[handler 函数体]
 ```
 
-流程是固定的：
+这个流程是固定的：
 
 1. 先按声明顺序运行所有 `FromRequestParts` 提取器，它们共享同一份 `Parts`，可以读取方法、URI、请求头。
 2. 把 `Parts` 与 `Body` 重新组装成 `Request`。
@@ -93,7 +92,7 @@ async fn handler(
 {{#include ../../examples/ch04-extractors/src/lib.rs:handler_order}}
 ```
 
-`Caller` 通过组合 `AuthUser` 与 `Tenant` 读取 `Authorization` 与 `X-Tenant-Id` 两个请求头，属于 `FromRequestParts`；`Json<CreateTask>` 读取请求体，属于 `FromRequest`。顺序只能是前者在前、后者在最后。`Caller` 是本章要构建的自定义组合类型，先看它的位置即可。
+`Caller` 通过组合 `AuthUser` 与 `Tenant` 读取 `Authorization` 与 `X-Tenant-Id` 两个请求头，属于 `FromRequestParts`；`Json<CreateTask>` 读取请求体，属于 `FromRequest`。顺序只能是前者在前、后者在最后。`Caller` 是本章要构建的自定义组合类型，先知道它的位置即可。
 
 ## 4.2 内置提取器
 
