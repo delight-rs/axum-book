@@ -107,7 +107,10 @@ examples/ch04-extractors
     └── lib.rs    # 全部提取器与测试
 ```
 
-路由表把演示分成两组：`/extract` 放内置提取器，`/api/v1` 放状态、认证与组合提取器。
+路由表把演示分成两组：
+
+- `/extract`： 放内置提取器，
+- `/api/v1` 放状态、认证与组合提取器。
 
 ```rust
 {{#include ../../examples/ch04-extractors/src/lib.rs:app}}
@@ -120,7 +123,7 @@ cd examples/ch04-extractors
 cargo run
 ```
 
-服务监听 `http://127.0.0.1:3000`。下面逐个看内置提取器。为节省篇幅，`curl -i` 的输出省略了 `Content-Length`、`Date` 等与结论无关的响应头。
+服务监听 `http://127.0.0.1:3000`。下面逐个分析内置提取器。为节省篇幅，`curl -i` 的输出省略了 `Content-Length`、`Date` 等与结论无关的响应头。
 
 ### 4.2.1 `Path`：路径参数
 
@@ -138,7 +141,7 @@ HTTP/1.1 400 Bad Request
 Invalid URL: Cannot parse `abc` to a `u64`
 ```
 
-`Path<T>` 的 `T` 需要实现 `serde::DeserializeOwned`（可反序列化成拥有所有权的值）并且 `Send`。常用的三种写法：
+`Path<T>` 的 `T` 需要实现 `serde::DeserializeOwned`（可反序列化成拥有所有权的值）以及 `Send`。常用的三种写法：
 
 | 路径                               | 提取器类型                      |
 | ---------------------------------- | ------------------------------- |
