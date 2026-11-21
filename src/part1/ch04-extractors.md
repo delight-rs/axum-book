@@ -159,7 +159,7 @@ Invalid URL: Cannot parse `abc` to a `u64`
 {{#include ../../examples/ch04-extractors/src/lib.rs:query}}
 ```
 
-`PageQuery` 用 `#[serde(default = "...")]` 给 `page` 与 `page_size` 提供默认值，`status` 是 `Option<String>`，缺失时为 `None`。`#[derive(Deserialize)]` 是 serde 的派生宏：它根据字段名生成从键值对到结构体的反序列化实现；`#[serde(default = "...")]` 指定字段缺失时调用的默认值工厂函数。
+`PageQuery` 使用用 `#[serde(default = "...")]` 给 `page` 与 `page_size` 提供默认值，`status` 是 `Option<String>`，缺失时为 `None`。`#[derive(Deserialize)]` 是 serde 的派生宏：它根据字段名生成从键值对到结构体的反序列化实现；`#[serde(default = "...")]` 指定字段缺失时调用的默认值工厂函数。
 
 ```sh
 $ curl 'http://127.0.0.1:3000/extract/query?page=2&page_size=5&status=todo'
@@ -188,11 +188,13 @@ Failed to deserialize query string: page: invalid digit found in string
 $ curl -X POST http://127.0.0.1:3000/extract/json \
     -H 'content-type: application/json' \
     -d '{"title":"write ch04"}'
+
 {"title":"write ch04","done":false}
 ```
 
 成功时返回 201 Created。
 
+```sh
 $ curl -i -X POST http://127.0.0.1:3000/extract/json -d '{"title":"x"}'
 HTTP/1.1 415 Unsupported Media Type
 ...
@@ -210,9 +212,9 @@ HTTP/1.1 422 Unprocessable Entity
 ...
 Failed to deserialize the JSON body into the target type: title: invalid type: integer `42`, expected a string at line 1 column 11
 
-````
+```
 
-`Json<T>` 的 rejection 分四类，状态码不同：
+`Json<T>` 的 rejection 分四类，它们的状态码不同：
 
 | 情况                           | 状态码 |
 | ------------------------------ | ------ |
@@ -221,13 +223,15 @@ Failed to deserialize the JSON body into the target type: title: invalid type: i
 | 语法正确但字段类型或结构不匹配 | 422    |
 | 请求体超过限制                 | 413    |
 
-`Json<T>` 实现了 `FromRequest`，会消费整个请求体，因此只能出现在参数列表最后。它同时实现了 `IntoResponse`，也可以作为返回类型，把结构体序列化成 JSON；这里的 `Serialize` 派生负责生成序列化实现。
+`Json<T>` 实现了 `FromRequest`，会消费整个请求体，因此只能出现在参数列表最后。它同时实现了 `IntoResponse`，也可以作为返回类型，它会把结构体序列化成 JSON；这里的 `Serialize` 派生负责生成序列化实现。
 
 ### 4.2.4 `State`：共享状态
 
+共享状态
+
 ```rust
 {{#include ../../examples/ch04-extractors/src/lib.rs:state}}
-````
+```
 
 ```rust
 {{#include ../../examples/ch04-extractors/src/lib.rs:state_extractor}}
@@ -300,7 +304,7 @@ uri=/original-uri, original=/api/v1/original-uri
 
 ### 4.3.1 `Result<T, T::Rejection>`：在 handler 里处理失败
 
-如果某个 handler 想自己决定提取失败时的响应，可以把提取器包进 `Result`：
+如果某个 handler 想自己决定提取失败时的响应，可以把提取器放进 `Result`：
 
 ```rust
 {{#include ../../examples/ch04-extractors/src/lib.rs:result_extractor}}
@@ -316,7 +320,7 @@ page=3
 
 `Result<T, T::Rejection>` 的 rejection 类型是 `Infallible`，所以 handler 一定会执行。失败信息作为 `Err` 值交给 handler，由 handler 决定返回默认值、记录日志还是返回自定义错误。
 
-这种写法适合单个 handler 的特殊需求。如果很多 handler 都要同样的失败策略，应该把策略收敛到自定义提取器的 `IntoResponse` 实现里，或者交给 Ch 5 的 `AppError`。
+这种写法适合单个 handler 的特殊需求。如果很多 handler 都需要同样的失败策略，因此应该把失败策略收敛到自定义提取器的 `IntoResponse` 实现里，或者交给 Ch 5 的 `AppError`。
 
 ### 4.3.2 0.8 的 `Option<T>` 只对部分提取器生效
 
