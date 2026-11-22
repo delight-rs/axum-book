@@ -337,7 +337,7 @@ pub trait OptionalFromRequestParts<S>: Sized {
 }
 ```
 
-这个 trait 的关键在于：提取器自己决定什么情况算「缺失」，什么情况仍然要拒绝请求。
+这个 trait 的关键在于：提取器自己决定什么情况算「缺失」，什么情况需要拒绝请求。
 
 ```mermaid
 flowchart TD
@@ -347,9 +347,9 @@ flowchart TD
   B -->|否| E["编译错误"]
 ```
 
-0.8 之前，`Option<T>` 对所有 `FromRequestParts` 都有实现，任何提取失败都会被转换为 `None`。这会把「请求头没带」和「token 伪造」混为一谈，对认证类提取器是严重问题。0.8 引入 `OptionalFromRequestParts`，要求提取器显式选择加入，并把「缺失」与「非法」分开。
+0.8 之前，`Option<T>` 对所有 `FromRequestParts` 都有实现，任何提取失败都会被转换为 `None`。这会把「请求头没带」和「token 伪造」混为一谈，对认证类提取器是严重问题。0.8 引入 `OptionalFromRequestParts`，并要求提取器显式选择加入，从而把「缺失」与「非法」分开。
 
-内置提取器的支持情况：
+内置提取器对 `<Option<T>` 的支持情况：
 
 | 写法                     | 0.8 是否可用 | `None` 的条件       | 存在但非法时          |
 | ------------------------ | ------------ | ------------------- | --------------------- |
@@ -370,7 +370,7 @@ flowchart TD
 {{#include ../../examples/ch04-extractors/src/lib.rs:json_optional}}
 ```
 
-`json_optional` 使用 `Option<Json<CreateTask>>`，行为分三种：
+`json_optional` 使用 `Option<Json<CreateTask>>`，它的行为分三种：
 
 ```sh
 # 没有 Content-Type：None
@@ -390,7 +390,7 @@ HTTP/1.1 415 Unsupported Media Type
 ...
 ```
 
-这里有一个容易踩的细节：`curl -d` 会自动补上 `Content-Type: application/x-www-form-urlencoded`，所以第一条命令必须用 `-H 'Content-Type:'` 显式移除这个头，才能触发「没有 Content-Type」的分支。
+这里有一个易错的细节：`curl -d` 会自动补上 `Content-Type: application/x-www-form-urlencoded`，所以第一条命令必须用 `-H 'Content-Type:'` 显式移除这个头，才能触发「没有 Content-Type」的分支。
 
 ## 4.4 提取器组合
 
@@ -398,7 +398,7 @@ HTTP/1.1 415 Unsupported Media Type
 
 handler 的多个参数在内部被当作元组处理。元组提取器最多支持 **16 个元素**，handler 的参数上限也是 **16 个**。超过这个数量，需要把参数合并成一个结构体，或者使用自定义组合类型。
 
-元组中前面的元素必须实现 `FromRequestParts`，最后一个元素必须实现 `FromRequest`（只读的 parts 提取器通过 blanket impl 自动满足）。本章示例用一个显式元组演示多个 parts 提取器；这里的 `AuthUser` 与 `Tenant` 是 4.5 要构建的提取器，先关注组合方式：
+元组中前面的元素必须实现 `FromRequestParts`，最后一个元素必须实现 `FromRequest`（只读的 parts 提取器通过 blanket impl 自动满足）。本章示例用一个显式元组演示多个 parts 提取器；这里的 `AuthUser` 与 `Tenant` 是 4.5 要构建的提取器，我们先关注组合方式：
 
 ```rust
 {{#include ../../examples/ch04-extractors/src/lib.rs:tuple_extractor}}
@@ -424,7 +424,7 @@ HTTP/1.1 401 Unauthorized
 2. **跨字段约束**：token 里的租户与 `X-Tenant-Id` 必须一致，这个校验不应该由每个 handler 重复实现。
 3. **领域语义**：handler 真正关心的是「调用者上下文」，而不是两个独立的请求头。
 
-把 `AuthUser` 与 `Tenant` 合并成 `Caller`，把校验放进 `FromRequestParts` 实现，handler 只声明一个参数。`Caller` 的完整实现在 4.5 末尾。这里先记住原则：**能在提取器阶段拒绝的请求，不要留到 handler 里处理**。这样 handler 获得的数据已经满足前置条件，业务代码不需要重复写防御性分支。
+如果把 `AuthUser` 与 `Tenant` 合并成 `Caller`，再把校验放进 `FromRequestParts` 实现，此时 handler 只声明一个参数。`Caller` 的完整实现在 4.5 末尾。我们这里先记住原则：**能在提取器阶段拒绝的请求，不要留到 handler 里处理**。这样 handler 获得的数据已经满足前置条件，业务代码不需要重复写防御性分支。
 
 ## 4.5 自定义提取器实战
 
@@ -450,7 +450,7 @@ HTTP/1.1 401 Unauthorized
 {{#include ../../examples/ch04-extractors/src/lib.rs:auth_user_struct}}
 ```
 
-`Claims` 中的 `sub` 是用户 ID，`tid` 是租户 ID，`exp` 是过期时间（Unix 秒）。这三个字段是示例约定，真实项目应按 Ch 10 的 token 规范扩展。
+`Claims` 中的 `sub` 是用户 ID，`tid` 是租户 ID，`exp` 是过期时间（单位 秒）。这三个字段是示例约定，真实项目应按 Ch 10 的 token 规范扩展。
 
 实现 `FromRequestParts<AppState>`：
 
