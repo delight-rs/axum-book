@@ -458,7 +458,7 @@ HTTP/1.1 401 Unauthorized
 {{#include ../../examples/ch04-extractors/src/lib.rs:auth_user_required}}
 ```
 
-解析与验签的辅助函数：
+解析与验证签名的辅助函数：
 
 ```rust
 {{#include ../../examples/ch04-extractors/src/lib.rs:auth_user_helpers}}
@@ -466,12 +466,12 @@ HTTP/1.1 401 Unauthorized
 
 处理流程如下：
 
-1. 从 `Parts` 读取 `Authorization` 头。缺失、非 ASCII、不是 `Bearer <token>` 形式，都返回 401。
+1. 从 `Parts` 读取 `Authorization` 头。如果Authorization缺失、不是ASCII、不是 `Bearer <token>` 形式，都将返回 401。
 2. 用 `AppState` 中的密钥构造 `DecodingKey`。
 3. 用 `Validation::new(Algorithm::HS256)` 固定算法并校验 `exp`。
 4. 验签成功后，把 `Claims` 转成 `AuthUser`。
 
-两个安全要点：
+有两个安全要点：
 
 - **固定算法**。`Validation::new(Algorithm::HS256)` 同时校验 token 头部的 `alg`，避免攻击者把 `alg` 改成 `none` 或换成其他算法。
 - **先验签，再信任载荷**。`AuthUser` 的字段必须来自 `decode` 的返回值，不能先解析 payload 再补验签。
