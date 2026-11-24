@@ -478,7 +478,7 @@ HTTP/1.1 401 Unauthorized
 
 示例在每次提取时构造 `DecodingKey`；这样写便于演示，生产环境可以把 `DecodingKey` 放进 `AppState` 复用。
 
-`AuthUser` 也可以做成可选提取器，这样公开接口既能识别已登录用户，又允许匿名访问：
+`AuthUser` 也可以做成**可选**提取器，这样公开接口既能识别已登录用户，又允许匿名访问：
 
 ```rust
 {{#include ../../examples/ch04-extractors/src/lib.rs:auth_user_optional}}
@@ -486,7 +486,7 @@ HTTP/1.1 401 Unauthorized
 
 `Option<AuthUser>` 的语义与 4.3 一致：请求头缺失时返回 `None`；请求头存在但 token 非法时返回 401，不会降级成匿名用户。
 
-先取一个开发用 token：
+先使用一个开发用的 token：
 
 ```sh
 $ curl -X POST http://127.0.0.1:3000/api/v1/dev-token \
@@ -496,7 +496,7 @@ $ curl -X POST http://127.0.0.1:3000/api/v1/dev-token \
 {"code":0,"message":"ok","data":{"token":"eyJ...","expires_in":3600}}
 ```
 
-把 `data.token` 保存到环境变量（需要 `jq`；没有 `jq` 可以手动复制）。以下命令都在同一个 shell 会话中执行：
+把 `data.token` 保存到环境变量（需要 `jq`；没有 `jq` 可以手动复制，然后在使用该环境遍。下面的几个命令都会在同一个 shell 会话中执行：
 
 ```sh
 TOKEN=$(curl -s -X POST http://127.0.0.1:3000/api/v1/dev-token \
@@ -507,8 +507,7 @@ TOKEN=$(curl -s -X POST http://127.0.0.1:3000/api/v1/dev-token \
 验证三种情况：
 
 ```sh
-$ curl http://127.0.0.1:3000/api/v1/me -H "Authorization: Bearer $TOKEN"
-{"code":0,"message":"ok","data":{"user_id":42,"tenant_id":7}}
+$ curl http://127.0.0.1:3000/api/v1/me -H "Authorization: Bearer $TOKEN" {"code":0,"message":"ok","data":{"user_id":42,"tenant_id":7}}
 
 $ curl -i http://127.0.0.1:3000/api/v1/me
 HTTP/1.1 401 Unauthorized
@@ -521,7 +520,7 @@ HTTP/1.1 401 Unauthorized
 {"code":30001,"message":"invalid token","data":null}
 ```
 
-`/api/v1/dev-token` 只是开发期辅助接口，生产环境必须删除。真实的登录、刷新、注销流程在 Ch 10。示例只在本地保留默认密钥；生产环境必须通过 `JWT_SECRET` 注入，且不要提交真实密钥。
+`/api/v1/dev-token` 只是开发期辅助接口，生产环境必须删除。真实的登录、刷新、注销流程在 Ch 10。上面的示例只在本地保留默认密钥；生产环境必须通过 `JWT_SECRET` 注入，且不要提交真实密钥。
 
 ### 4.5.3 `Tenant`：多租户上下文
 
