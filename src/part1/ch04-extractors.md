@@ -524,7 +524,7 @@ HTTP/1.1 401 Unauthorized
 
 ### 4.5.3 `Tenant`：多租户上下文
 
-多租户（multi-tenant）是指同一套服务为多个租户隔离数据，每个请求都必须携带租户标识。`Tenant` 从 `X-Tenant-Id` 头解析租户 ID。示例用 `u64` 作为租户 ID；真实项目可以换成 UUID 或字符串，只要调整 `Tenant` 内部类型。推荐先实现 `OptionalFromRequestParts`，再让必需的 `FromRequestParts` 复用这套逻辑：
+多租户（multi-tenant）是指同一套服务为多个租户隔离数据，这种情况下每个请求都必须携带租户标识。`Tenant` 从 `X-Tenant-Id` 头解析租户 ID。示例用 `u64` 作为租户 ID；真实项目可以换成 UUID 或字符串，只要调整 `Tenant` 内部类型。推荐先实现 `OptionalFromRequestParts`，再让必需的 `FromRequestParts` 复用这套逻辑：
 
 ```rust
 {{#include ../../examples/ch04-extractors/src/lib.rs:tenant}}
@@ -536,7 +536,7 @@ HTTP/1.1 401 Unauthorized
 - 请求头存在但不是合法数字：返回 400，错误码 `10001`。
 - 请求头合法：返回 `Ok(Some(Tenant(id)))`。
 
-必需的 `FromRequestParts` 调用可选实现，把 `None` 转成「缺少 `X-Tenant-Id`」错误。这样「缺失」与「格式错误」保持不同错误码，排查问题时能直接定位。
+必选提取器直接复用可选版本的实现：在为 `TenantId` 实现 `FromRequestParts` 时，内部只需委托给 `Option<TenantId>::from_request_parts`，若返回 `None`，便将其映射为 `「缺少 X-Tenant-Id」`错误。。这样「缺失」与「格式错误」保持不同错误码，排查问题时能直接定位。
 
 ```sh
 $ curl http://127.0.0.1:3000/api/v1/tenant/optional
