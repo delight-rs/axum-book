@@ -553,13 +553,13 @@ HTTP/1.1 400 Bad Request
 
 ### 4.5.4 `Caller`：组合提取器
 
-`Caller` 把 `AuthUser` 与 `Tenant` 组合起来，并强制两者指向同一个租户：
+通过 `Caller`组合提取器把 `AuthUser` 与 `Tenant` 组合起来，并强制两者指向同一个租户：
 
 ```rust
 {{#include ../../examples/ch04-extractors/src/lib.rs:caller}}
 ```
 
-`Caller` 的 `FromRequestParts` 实现顺序执行两个提取器，然后做一致性校验。校验失败的请求在提取阶段就返回 403，handler 不会看到不一致的上下文。
+`Caller` 的 `FromRequestParts` 实现按顺序执行两个提取器，然后做一致性校验。校验失败的请求在提取阶段就返回 403，从而使得 handler 不会看到不一致的上下文。
 
 ```sh
 $ curl http://127.0.0.1:3000/api/v1/caller \
