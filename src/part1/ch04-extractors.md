@@ -591,7 +591,7 @@ $ curl -X POST http://127.0.0.1:3000/api/v1/tasks \
 {"code":0,"message":"ok","data":{"title":"write ch04","done":false,"user_id":42,"tenant_id":7}}
 ```
 
-## 4.6 请求体限制与 `Bytes` / multipart
+## 4.6 请求体限制与 `Bytes` 以及 multipart
 
 ### 4.6.1 `Bytes`：读取完整请求体
 
