@@ -599,7 +599,7 @@ $ curl -X POST http://127.0.0.1:3000/api/v1/tasks \
 {{#include ../../examples/ch04-extractors/src/lib.rs:body_limit}}
 ```
 
-`Bytes` 实现 `FromRequest`，把整个请求体读进内存，适合小体积的二进制数据、Webhook 原文、签名校验。它不检查 `Content-Type`，也不做 UTF-8 校验。
+`Bytes` 实现了 `FromRequest`，它会把整个请求体读进内存，适合小体积的二进制数据、Webhook 原文、签名校验等内容。它不检查 `Content-Type`，也不做 UTF-8 校验。
 
 ```sh
 $ curl -X POST http://127.0.0.1:3000/extract/bytes -d 'hello'
@@ -610,7 +610,7 @@ received 5 bytes
 
 ### 4.6.2 `DefaultBodyLimit`：默认 2 MB
 
-Axum 对请求体有默认限制：`DefaultBodyLimit` 默认是 **2 MB**。超过限制的请求会得到 413。可以用 `.layer(DefaultBodyLimit::max(n))` 调整，作用范围取决于挂载位置。
+Axum 对请求体有默认的大小限制：`DefaultBodyLimit` 默认是 **2 MB**。超过限制的请求会返回 413。可以用 `.layer(DefaultBodyLimit::max(n))` 调整这个限制，其作用范围取决于该 layer 的挂载位置。
 
 示例给单条路由设置了 64 字节上限：`.route("/limited", post(limited_body).layer(DefaultBodyLimit::max(64)))`。
 
@@ -627,7 +627,7 @@ HTTP/1.1 413 Payload Too Large
 Failed to buffer the request body: length limit exceeded
 ```
 
-如果挂到整个 Router 上，就对所有路由的 body 提取器生效：
+如果挂到整个 Router 上，就会对所有路由的 body 提取器生效：
 
 ```rust
 // 片段：把限制挂到整个 Router 上
@@ -636,7 +636,7 @@ Router::new()
     .layer(DefaultBodyLimit::max(1024 * 1024))
 ```
 
-`DefaultBodyLimit` 只约束消费请求体的提取器，例如 `Bytes`、`String`、`Json`、`Form`。`Path`、`Query`、`HeaderMap` 不读 body，不受影响。如果第三方提取器直接调用 `Body::poll_frame`，`DefaultBodyLimit` 不会自动生效；需要在传输层统一限制时，可以使用 `tower-http` 的 `RequestBodyLimit`。
+`DefaultBodyLimit` 只约束消费请求体的提取器，例如 `Bytes`、`String`、`Json`、`Form`。`Path`、`Query`、`HeaderMap` 不读 body，则不受其影响。如果第三方提取器直接调用 `Body::poll_frame`，`DefaultBodyLimit` 不会自动生效；需要在传输层统一限制时，可以使用 `tower-http` 的 `RequestBodyLimit`。
 
 ### 4.6.3 multipart 预告
 
